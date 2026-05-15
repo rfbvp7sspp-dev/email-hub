@@ -415,7 +415,23 @@ function loadPasted() {
 }
 
 function parseAndLoad(text, filename) {
-  const data = JSON.parse(text);
+  // Strip BOM
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch (e1) {
+    // Power Automate saves literal newlines inside JSON strings, making invalid JSON.
+    // Fix: escape all literal CR/LF characters, then retry.
+    try {
+      const fixed = text.replace(/\r\n/g, '\\n').replace(/\r/g, '\\n').replace(/\n/g, '\\n');
+      data = JSON.parse(fixed);
+    } catch (e2) {
+      throw new Error('JSON invalid even after fix: ' + e2.message);
+    }
+  }
+
   const email = normalise(data, filename);
   saveRecent(email);
   openEmail(email);
