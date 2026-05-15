@@ -25,15 +25,29 @@ export function copyAndOpen(prompt, provider) {
 }
 
 /**
- * Open a provider by deep link, falling back to web URL after a short delay.
+ * Open a provider by deep link, falling back to the web URL if the app
+ * doesn't open. Uses visibilitychange to detect whether the app launched —
+ * if the page goes hidden the app opened, so we skip the web fallback.
  * @param {string} key - Key from CONFIG.providers.
  */
 export function openProvider(key) {
   const cfg = CONFIG.providers[key];
   if (!cfg) return;
+
+  let appOpened = false;
+  const onHide = () => { appOpened = true; };
+  document.addEventListener('visibilitychange', onHide, { once: true });
+
   window.location.href = cfg.deepLink;
-  // If the deep link doesn't launch an app, open the web URL as fallback.
-  setTimeout(() => window.open(cfg.webUrl, '_blank'), 1200);
+
+  setTimeout(() => {
+    document.removeEventListener('visibilitychange', onHide);
+    if (!appOpened) {
+      // App didn't open — navigate to web version in the same tab
+      // (window.open is always blocked by Safari in a timeout).
+      window.location.href = cfg.webUrl;
+    }
+  }, 1500);
 }
 
 // ── INTERNAL ──
