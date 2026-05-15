@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Email Hub</title>
+<style>
+  /* ─── TOKENS ─────────────────────────────── */
+  :root {
+    --gold-1: #F7C52A;
+    --gold-2: #F4A500;
+    --gold-3: #E8990A;
+    --gold-4: #C97D00;
+    --gold-grad: linear-gradient(135deg, var(--gold-1), var(--gold-2), var(--gold-3), var(--gold-4));
+    --gold-text: #F4A500;
+
+    --bg:       #0A0A0C;
+    --surface:  #141416;
+    --surface2: #1C1C1F;
+    --border:   rgba(255,255,255,0.08);
+    --border2:  rgba(255,255,255,0.04);
+
+    --text-1:   #F2F2F7;
+    --text-2:   #AEAEB2;
+    --text-3:   #636366;
+
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
+
+    --safe-top:    env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* ─── RESET ──────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+    background: var(--bg);
+    color: var(--text-1);
+    min-height: 100dvh;
+    padding-top: var(--safe-top);
+    padding-bottom: calc(var(--safe-bottom) + 24px);
+    overflow-x: hidden;
+  }
+
+  /* ─── HEADER ─────────────────────────────── */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 12px 20px 12px;
+    background: rgba(10,10,12,0.85);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    border-bottom: 1px solid var(--border2);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .header-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: var(--gold-grad);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .header-badge svg { width: 16px; height: 16px; }
+
+  .header-title {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    color: var(--text-1);
+  }
+
+  .header-subtitle {
+    font-size: 12px;
+    color: var(--text-3);
+    margin-top: 1px;
+    font-weight: 400;
+  }
+
+  .header-time {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--text-3);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+  }
+
+  /* ─── LAYOUT ─────────────────────────────── */
+  .content {
+    padding: 20px 16px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* ─── EMAIL CARD ─────────────────────────── */
+  .email-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(12px);
+    animation: fadeUp 0.4s ease 0.05s forwards;
+  }
+
+  .email-strip {
+    height: 4px;
+    background: var(--gold-grad);
+  }
+
+  .email-meta {
+    padding: 16px 16px 12px;
+    border-bottom: 1px solid var(--border2);
+  }
+
+  .sender-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+
+  .avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--gold-grad);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #000;
+    flex-shrink: 0;
+    letter-spacing: -0.5px;
+  }
+
+  .sender-info { flex: 1; min-width: 0; }
+
+  .sender-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .sender-email {
+    font-size: 12px;
+    color: var(--text-3);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .email-time {
+    font-size: 12px;
+    color: var(--text-3);
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .subject-line {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-1);
+    letter-spacing: -0.2px;
+    line-height: 1.3;
+    margin-bottom: 4px;
+  }
+
+  .email-body {
+    padding: 12px 16px;
+    font-size: 14px;
+    color: var(--text-2);
+    line-height: 1.6;
+    max-height: 120px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .email-body::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 40px;
+    background: linear-gradient(transparent, var(--surface));
+    pointer-events: none;
+  }
+
+  .email-body.expanded {
+    max-height: none;
+  }
+
+  .email-body.expanded::after { display: none; }
+
+  .expand-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 8px 16px 14px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gold-text);
+    background: none;
+    border: none;
+    cursor: pointer;
+    width: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .expand-btn svg {
+    width: 14px; height: 14px;
+    transition: transform 0.25s ease;
+  }
+
+  .expand-btn.expanded svg { transform: rotate(180deg); }
+
+  /* Attachments */
+  .attachments {
+    padding: 0 16px 14px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .attach-chip {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    font-size: 12px;
+    color: var(--text-2);
+    font-weight: 500;
+  }
+
+  .attach-chip svg { width: 12px; height: 12px; color: var(--gold-text); }
+
+  /* ─── SECTION LABEL ──────────────────────── */
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+    color: var(--text-3);
+    padding: 0 4px;
+    opacity: 0;
+    animation: fadeUp 0.35s ease 0.2s forwards;
+  }
+
+  /* ─── ACTION BUTTONS ─────────────────────── */
+  .actions-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    opacity: 0;
+    animation: fadeUp 0.4s ease 0.25s forwards;
+  }
+
+  .action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: background 0.15s ease, transform 0.1s ease, border-color 0.15s ease;
+    text-align: left;
+    min-height: 90px;
+    position: relative;
+    overflow: hidden;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .action-btn:active {
+    transform: scale(0.97);
+    background: var(--surface2);
+  }
+
+  .action-btn.primary {
+    background: rgba(244,165,0,0.1);
+    border-color: rgba(244,165,0,0.25);
+  }
+
+  .action-btn.primary:active {
+    background: rgba(244,165,0,0.18);
+  }
+
+  .action-btn-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .action-btn-icon svg { width: 18px; height: 18px; }
+
+  .icon-reply   { background: rgba(52,199,89,0.15); color: #34C759; }
+  .icon-summary { background: rgba(10,132,255,0.15); color: #0A84FF; }
+  .icon-tech    { background: rgba(255,159,10,0.15); color: #FF9F0A; }
+  .icon-task    { background: rgba(191,90,242,0.15); color: #BF5AF2; }
+  .icon-escalate{ background: rgba(255,69,58,0.15); color: #FF453A; }
+  .icon-custom  { background: rgba(244,165,0,0.15); color: var(--gold-text); }
+
+  .action-btn-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-1);
+    letter-spacing: -0.2px;
+  }
+
+  .action-btn-desc {
+    font-size: 11px;
+    color: var(--text-3);
+    line-height: 1.3;
+    margin-top: -4px;
+  }
+
+  /* Shimmer on press */
+  .action-btn::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.04);
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .action-btn:active::after { opacity: 1; }
+
+  /* ─── CUSTOM PROMPT ──────────────────────── */
+  .custom-section {
+    opacity: 0;
+    animation: fadeUp 0.4s ease 0.35s forwards;
+  }
+
+  .custom-input-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    display: flex;
+    align-items: flex-end;
+    gap: 10px;
+  }
+
+  .custom-input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    font-family: inherit;
+    font-size: 15px;
+    color: var(--text-1);
+    resize: none;
+    min-height: 44px;
+    max-height: 120px;
+    line-height: 1.5;
+    -webkit-appearance: none;
+  }
+
+  .custom-input::placeholder { color: var(--text-3); }
+
+  .custom-send-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--gold-grad);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.1s ease, opacity 0.15s;
+  }
+
+  .custom-send-btn:active { transform: scale(0.92); }
+  .custom-send-btn svg { width: 16px; height: 16px; color: #000; }
+
+  /* ─── TOAST ──────────────────────────────── */
+  .toast {
+    position: fixed;
+    bottom: calc(var(--safe-bottom) + 100px);
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: rgba(28,28,30,0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 40px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-1);
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.2s ease, transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+  }
+
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .toast-icon { font-size: 16px; }
+
+  /* ─── OPEN BUTTONS ───────────────────────── */
+  .open-row {
+    display: flex;
+    gap: 10px;
+    opacity: 0;
+    animation: fadeUp 0.4s ease 0.4s forwards;
+  }
+
+  .open-btn {
+    flex: 1;
+    padding: 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-2);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background 0.15s, transform 0.1s;
+  }
+
+  .open-btn:active { transform: scale(0.97); background: var(--surface2); }
+  .open-btn svg { width: 16px; height: 16px; }
+
+  .open-btn.claude {
+    background: rgba(203,166,247,0.08);
+    border-color: rgba(203,166,247,0.18);
+    color: #CBA6F7;
+  }
+
+  .open-btn.outlook {
+    background: rgba(10,132,255,0.08);
+    border-color: rgba(10,132,255,0.18);
+    color: #0A84FF;
+  }
+
+  /* ─── EMPTY STATE ────────────────────────── */
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 32px;
+    text-align: center;
+    gap: 12px;
+    opacity: 0;
+    animation: fadeUp 0.5s ease 0.1s forwards;
+  }
+
+  .empty-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+  }
+
+  .empty-icon svg { width: 28px; height: 28px; color: var(--text-3); }
+
+  .empty-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-1);
+  }
+
+  .empty-desc {
+    font-size: 14px;
+    color: var(--text-3);
+    line-height: 1.5;
+    max-width: 260px;
+  }
+
+  .test-btn {
+    margin-top: 8px;
+    padding: 12px 24px;
+    background: var(--gold-grad);
+    border: none;
+    border-radius: 40px;
+    font-size: 15px;
+    font-weight: 600;
+    color: #000;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.1s ease, opacity 0.15s;
+  }
+
+  .test-btn:active { transform: scale(0.96); opacity: 0.9; }
+
+  /* ─── ANIMATIONS ─────────────────────────── */
+  @keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ─── MODAL (Custom Prompt) ──────────────── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    z-index: 200;
+    display: flex;
+    align-items: flex-end;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
+
+  .modal-overlay.open {
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  .modal-sheet {
+    width: 100%;
+    background: #1C1C1E;
+    border-radius: 24px 24px 0 0;
+    padding: 8px 20px calc(var(--safe-bottom) + 24px);
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.32,0.72,0,1);
+  }
+
+  .modal-overlay.open .modal-sheet { transform: translateY(0); }
+
+  .modal-handle {
+    width: 36px;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 8px auto 20px;
+  }
+
+  .modal-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: var(--text-1);
+    margin-bottom: 14px;
+  }
+
+  .modal-textarea {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px;
+    font-family: inherit;
+    font-size: 15px;
+    color: var(--text-1);
+    resize: none;
+    height: 120px;
+    outline: none;
+    -webkit-appearance: none;
+    line-height: 1.5;
+  }
+
+  .modal-textarea::placeholder { color: var(--text-3); }
+
+  .modal-hint {
+    font-size: 12px;
+    color: var(--text-3);
+    margin-top: 8px;
+    line-height: 1.4;
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+  }
+
+  .modal-cancel {
+    flex: 1;
+    padding: 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-2);
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .modal-go {
+    flex: 2;
+    padding: 14px;
+    border-radius: var(--radius-md);
+    border: none;
+    background: var(--gold-grad);
+    color: #000;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform 0.1s ease;
+  }
+
+  .modal-go:active { transform: scale(0.97); }
+</style>
+</head>
+<body>
+
+<!-- ─── HEADER ─── -->
+<header class="header">
+  <div class="header-badge">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+      <polyline points="22,6 12,13 2,6"/>
+    </svg>
+  </div>
+  <div>
+    <div class="header-title">Email Hub</div>
+    <div class="header-subtitle">AI Workflow Controller</div>
+  </div>
+  <div class="header-time" id="headerTime"></div>
+</header>
+
+<!-- ─── MAIN ─── -->
+<main class="content" id="mainContent"></main>
+
+<!-- ─── TOAST ─── -->
+<div class="toast" id="toast">
+  <span class="toast-icon">✓</span>
+  <span id="toastMsg">Copied to clipboard</span>
+</div>
+
+<!-- ─── CUSTOM PROMPT MODAL ─── -->
+<div class="modal-overlay" id="customModal">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Custom Prompt</div>
+    <textarea class="modal-textarea" id="customPromptInput" placeholder="Type your instruction... (email content will be added automatically)"></textarea>
+    <p class="modal-hint">Your prompt + full email context will be copied to clipboard, then Claude opens.</p>
+    <div class="modal-actions">
+      <button class="modal-cancel" onclick="closeCustomModal()">Cancel</button>
+      <button class="modal-go" onclick="runCustomPrompt()">Copy &amp; Open Claude</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ─── STATE ─────────────────────────────────── */
+let emailData = {};
+let bodyExpanded = false;
+
+/* ─── INIT ───────────────────────────────────── */
+document.addEventListener('DOMContentLoaded', () => {
+  updateClock();
+  setInterval(updateClock, 30000);
+  parseAndRender();
+});
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('headerTime').textContent =
+    now.toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+/* ─── URL PARAMS ─────────────────────────────── */
+function parseAndRender() {
+  const params = new URLSearchParams(window.location.search);
+  const hasData = params.has('sender') || params.has('subject') || params.has('body');
+
+  if (!hasData) {
+    renderEmpty();
+    return;
+  }
+
+  emailData = {
+    sender:      params.get('sender')      || 'Unknown Sender',
+    senderEmail: params.get('email')       || '',
+    subject:     params.get('subject')     || '(No subject)',
+    body:        params.get('body')        || '',
+    time:        params.get('time')        || formatNow(),
+    attachments: params.get('attachments') ? params.get('attachments').split(',').map(s => s.trim()) : []
+  };
+
+  renderEmail();
+}
+
+function formatNow() {
+  return new Date().toLocaleTimeString('en-AU', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+/* ─── AVATAR INITIALS ────────────────────────── */
+function getInitials(name) {
+  const parts = name.trim().split(' ');
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return name.slice(0, 2).toUpperCase();
+}
+
+/* ─── RENDER EMAIL ───────────────────────────── */
+function renderEmail() {
+  const mc = document.getElementById('mainContent');
+
+  const attachHTML = emailData.attachments.length > 0 ? `
+    <div class="attachments">
+      ${emailData.attachments.map(a => `
+        <div class="attach-chip">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+          </svg>
+          ${escHtml(a)}
+        </div>`).join('')}
+    </div>` : '';
+
+  const bodyPreview = escHtml(emailData.body).replace(/\n/g, '<br>');
+
+  mc.innerHTML = `
+    <!-- Email Card -->
+    <div class="email-card">
+      <div class="email-strip"></div>
+      <div class="email-meta">
+        <div class="sender-row">
+          <div class="avatar">${getInitials(emailData.sender)}</div>
+          <div class="sender-info">
+            <div class="sender-name">${escHtml(emailData.sender)}</div>
+            ${emailData.senderEmail ? `<div class="sender-email">${escHtml(emailData.senderEmail)}</div>` : ''}
+          </div>
+          <div class="email-time">${escHtml(emailData.time)}</div>
+        </div>
+        <div class="subject-line">${escHtml(emailData.subject)}</div>
+      </div>
+      <div class="email-body" id="emailBody">${bodyPreview || '<span style="color:var(--text-3)">No body content</span>'}</div>
+      ${emailData.body && emailData.body.length > 200 ? `
+      <button class="expand-btn" id="expandBtn" onclick="toggleBody()">
+        Show more
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      </button>` : ''}
+      ${attachHTML}
+    </div>
+
+    <!-- Section label -->
+    <div class="section-label">Actions</div>
+
+    <!-- Action grid -->
+    <div class="actions-grid">
+
+      <button class="action-btn primary" onclick="runAction('reply')">
+        <div class="action-btn-icon icon-reply">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/>
+          </svg>
+        </div>
+        <div class="action-btn-label">Draft Reply</div>
+        <div class="action-btn-desc">Smart Reply via email assistant</div>
+      </button>
+
+      <button class="action-btn" onclick="runAction('summarise')">
+        <div class="action-btn-icon icon-summary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+            <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
+            <line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+          </svg>
+        </div>
+        <div class="action-btn-label">Summarise</div>
+        <div class="action-btn-desc">Key points &amp; actions</div>
+      </button>
+
+      <button class="action-btn" onclick="runAction('techservices')">
+        <div class="action-btn-icon icon-tech">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+          </svg>
+        </div>
+        <div class="action-btn-label">Tech Services</div>
+        <div class="action-btn-desc">Work order or fault report</div>
+      </button>
+
+      <button class="action-btn" onclick="runAction('task')">
+        <div class="action-btn-icon icon-task">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 11 12 14 22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+        </div>
+        <div class="action-btn-label">Create Task</div>
+        <div class="action-btn-desc">Extract &amp; format action items</div>
+      </button>
+
+      <button class="action-btn" onclick="runAction('escalate')">
+        <div class="action-btn-icon icon-escalate">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <div class="action-btn-label">Escalate</div>
+        <div class="action-btn-desc">Draft escalation to Chris</div>
+      </button>
+
+      <button class="action-btn" onclick="openCustomModal()">
+        <div class="action-btn-icon icon-custom">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>
+          </svg>
+        </div>
+        <div class="action-btn-label">Custom Prompt</div>
+        <div class="action-btn-desc">Your own instruction</div>
+      </button>
+
+    </div>
+
+    <!-- Open buttons -->
+    <div class="open-row">
+      <button class="open-btn claude" onclick="openClaude()">
+        <svg viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/>
+        </svg>
+        Open Claude
+      </button>
+      <button class="open-btn outlook" onclick="openOutlook()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+        Outlook
+      </button>
+    </div>
+  `;
+}
+
+/* ─── EMPTY / TEST STATE ─────────────────────── */
+function renderEmpty() {
+  document.getElementById('mainContent').innerHTML = `
+    <div class="empty-state">
+      <div class="empty-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+          <polyline points="22,6 12,13 2,6"/>
+        </svg>
+      </div>
+      <div class="empty-title">No Email Loaded</div>
+      <div class="empty-desc">This page is opened by Power Automate with email data in the URL. Tap below to load a test email.</div>
+      <button class="test-btn" onclick="loadTestData()">Load Test Email</button>
+    </div>`;
+}
+
+function loadTestData() {
+  const test = {
+    sender: 'Jennifer Walsh',
+    email: 'jennifer.walsh@uchealth.com.au',
+    subject: 'RE: 1588 Camera System Upgrade Quote — UC Health',
+    body: `Hi Jordan,\n\nThanks for sending through the quote. I've had a chance to review with the Theatre Manager and we have a few questions before we proceed.\n\nFirstly, can you confirm whether the quote includes installation and commissioning? The biomedical team will need to be involved and we'd like to understand the timeline.\n\nSecondly, we're looking at a potential Q3 budget window. Is that achievable from a Stryker supply perspective?\n\nAlso — is there any flexibility on the service contract pricing if we commit to all three stacks at once?\n\nLet me know when you're free for a call this week.\n\nKind regards,\nJennifer Walsh\nProcurement Coordinator\nUC Health`,
+    time: '9:14 AM',
+    attachments: 'Quote_UCHealth_1588_v2.pdf,Stack_Config_Summary.xlsx'
+  };
+  const url = new URL(window.location.href);
+  Object.entries(test).forEach(([k, v]) => url.searchParams.set(k, v));
+  window.location.href = url.toString();
+}
+
+/* ─── EXPAND BODY ────────────────────────────── */
+function toggleBody() {
+  bodyExpanded = !bodyExpanded;
+  const el = document.getElementById('emailBody');
+  const btn = document.getElementById('expandBtn');
+  if (!el || !btn) return;
+  if (bodyExpanded) {
+    el.classList.add('expanded');
+    btn.classList.add('expanded');
+    btn.childNodes[0].textContent = 'Show less ';
+  } else {
+    el.classList.remove('expanded');
+    btn.classList.remove('expanded');
+    btn.childNodes[0].textContent = 'Show more ';
+  }
+}
+
+/* ─── BUILD EMAIL CONTEXT BLOCK ──────────────── */
+function emailContext() {
+  let ctx = `From: ${emailData.sender}`;
+  if (emailData.senderEmail) ctx += ` <${emailData.senderEmail}>`;
+  ctx += `\nSubject: ${emailData.subject}`;
+  if (emailData.attachments && emailData.attachments.length > 0) {
+    ctx += `\nAttachments: ${emailData.attachments.join(', ')}`;
+  }
+  ctx += `\n\n${emailData.body}`;
+  return ctx;
+}
+
+/* ─── PROMPT TEMPLATES ───────────────────────── */
+const PROMPTS = {
+  reply: (ctx) =>
+    `Use the email assistant skill in Smart Reply mode.\n\n${ctx}`,
+
+  summarise: (ctx) =>
+    `Summarise this email in 3 concise bullet points. Focus on: (1) what they want or need, (2) any key questions or concerns, (3) required action for Jordan (Stryker ATM QLD). Keep it tight — mobile reading.\n\n${ctx}`,
+
+  techservices: (ctx) =>
+    `Use the email assistant skill in Tech Services Generator mode. Generate the appropriate work order, fault report, or loan unit request based on the email content below.\n\n${ctx}`,
+
+  task: (ctx) =>
+    `Extract all action items from this email. Format as a numbered task list with priority (High / Medium / Low) and any relevant deadline. Context: Jordan is Stryker ATM QLD.\n\n${ctx}`,
+
+  escalate: (ctx) =>
+    `Use the email assistant skill in Smart Draft mode. Draft an escalation message to my manager Chris Waxman (Executive Territory Manager, Stryker South Pacific) regarding the email below. Be concise — include the key issue, why it needs escalation, and what response or support I need from him.\n\n${ctx}`,
+};
+
+/* ─── RUN ACTION ─────────────────────────────── */
+function runAction(type) {
+  const ctx = emailContext();
+  const prompt = PROMPTS[type] ? PROMPTS[type](ctx) : ctx;
+  copyAndLaunch(prompt, actionLabel(type));
+}
+
+function actionLabel(type) {
+  return { reply:'Reply prompt', summarise:'Summary prompt', techservices:'Tech Services prompt',
+           task:'Task prompt', escalate:'Escalation prompt' }[type] || 'Prompt';
+}
+
+/* ─── COPY + LAUNCH ──────────────────────────── */
+function copyAndLaunch(text, label) {
+  copyToClipboard(text)
+    .then(() => {
+      showToast(`✓`, `${label} copied — paste into Claude`);
+      setTimeout(() => openClaude(), 900);
+    })
+    .catch(() => {
+      showToast('⚠', 'Clipboard failed — copy manually');
+    });
+}
+
+function copyToClipboard(text) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text);
+  }
+  // Fallback for older Safari
+  return new Promise((resolve, reject) => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    try {
+      document.execCommand('copy') ? resolve() : reject();
+    } catch (e) { reject(e); }
+    document.body.removeChild(ta);
+  });
+}
+
+/* ─── OPEN APPS ──────────────────────────────── */
+function openClaude() {
+  // Try claude:// deep link; falls back to web if not installed
+  window.location.href = 'claude://';
+  setTimeout(() => {
+    // If app didn't open, open web version
+    // (iPhone will handle: if app installed, deep link fires; if not, this runs)
+  }, 1000);
+}
+
+function openOutlook() {
+  window.location.href = 'ms-outlook://';
+  setTimeout(() => {
+    window.open('https://outlook.office.com', '_blank');
+  }, 1000);
+}
+
+/* ─── CUSTOM MODAL ───────────────────────────── */
+function openCustomModal() {
+  document.getElementById('customModal').classList.add('open');
+  setTimeout(() => document.getElementById('customPromptInput').focus(), 350);
+}
+
+function closeCustomModal() {
+  document.getElementById('customModal').classList.remove('open');
+}
+
+function runCustomPrompt() {
+  const userPrompt = document.getElementById('customPromptInput').value.trim();
+  if (!userPrompt) { return; }
+  const ctx = emailContext();
+  const full = `${userPrompt}\n\n${ctx}`;
+  closeCustomModal();
+  setTimeout(() => copyAndLaunch(full, 'Custom prompt'), 300);
+}
+
+// Close modal on overlay tap
+document.getElementById('customModal').addEventListener('click', function(e) {
+  if (e.target === this) closeCustomModal();
+});
+
+/* ─── TOAST ──────────────────────────────────── */
+let toastTimer;
+function showToast(icon, msg) {
+  const toast = document.getElementById('toast');
+  document.getElementById('toastMsg').textContent = msg;
+  toast.querySelector('.toast-icon').textContent = icon;
+  toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 2800);
+}
+
+/* ─── UTILS ──────────────────────────────────── */
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+</script>
+</body>
+</html>
