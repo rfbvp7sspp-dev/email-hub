@@ -418,23 +418,42 @@ function parseAndLoad(text, filename) {
   // Strip BOM
   if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
 
-  let data;
-  try {
-    data = JSON.parse(text);
-  } catch (e1) {
-    // Power Automate saves literal newlines inside JSON strings, making invalid JSON.
-    // Fix: escape all literal CR/LF characters, then retry.
-    try {
-      const fixed = text.replace(/\r\n/g, '\\n').replace(/\r/g, '\\n').replace(/\n/g, '\\n');
-      data = JSON.parse(fixed);
-    } catch (e2) {
-      throw new Error('JSON invalid even after fix: ' + e2.message);
-    }
+  // Power Automate saves invalid JSON — unescaped quotes and literal newlines in the body.
+  // Skip JSON.parse entirely and extract fields directly from raw text.
+  const data = extractFields(text);
+
+  if (!data.from && !data.subject) {
+    throw new Error('Could not find email fields in file. Is this a Pending Emails JSON?');
   }
 
   const email = normalise(data, filename);
   saveRecent(email);
   openEmail(email);
+}
+
+function extractFields(text) {
+  const pluck = (key) => {
+    // Match simple string fields that don't contain broken quotes
+    const m = text.match(new RegExp('"' + key + '"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"'));
+    return m ? m[1] : '';
+  };
+
+  const from     = pluck('from');
+  const subject  = pluck('subject');
+  const received = pluck('received');
+
+  // Body is the messy field — extract everything between "body":" and the ","received" boundary
+  let body = '';
+  const bodyStart = text.indexOf('"body":"');
+  const bodyEnd   = text.lastIndexOf('","received"');
+  if (bodyStart !== -1 && bodyEnd > bodyStart) {
+    body = text.slice(bodyStart + 8, bodyEnd);
+  } else if (bodyStart !== -1) {
+    // fallback: grab to end
+    body = text.slice(bodyStart + 8, text.lastIndexOf('"}'));
+  }
+
+  return { from, subject, body, received };
 }
 
 /* ── STRIP HTML → PLAIN TEXT ── */
