@@ -377,26 +377,48 @@ document.getElementById('filePicker').addEventListener('change', function(e) {
   const reader = new FileReader();
   reader.onload = ev => {
     try {
-      const data = JSON.parse(ev.target.result);
+      // Strip UTF-8 BOM if present (iPhone sometimes adds it)
+      let text = ev.target.result.replace(/^﻿/, '');
+      const data = JSON.parse(text);
       const email = normalise(data, file.name);
       saveRecent(email);
       openEmail(email);
-    } catch {
-      showToast('&#9888;', 'Could not read JSON file');
+    } catch (err) {
+      showToast('&#9888;', 'Could not read file: ' + err.message.slice(0, 60));
     }
   };
-  reader.readAsText(file);
+  reader.readAsText(file, 'UTF-8');
   this.value = '';
 });
 
+/* ── STRIP HTML → PLAIN TEXT ── */
+function htmlToText(html) {
+  if (!html) return '';
+  // If it doesn't look like HTML, return as-is
+  if (!html.trim().startsWith('<')) return html;
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  // Remove script/style blocks entirely
+  tmp.querySelectorAll('script, style').forEach(el => el.remove());
+  // Replace <br> and <p> with newlines before extracting text
+  tmp.querySelectorAll('br').forEach(el => el.replaceWith('\n'));
+  tmp.querySelectorAll('p, div').forEach(el => el.prepend('\n'));
+  return tmp.textContent.replace(/\n{3,}/g, '\n\n').trim();
+}
+
 /* ── NORMALISE ── */
 function normalise(d, filename) {
+  // Power Automate saves: { from, subject, body (HTML), received }
+  const rawFrom   = d.from || d.sender || d.From || d.senderName || '';
+  const rawEmail  = d.email || d.senderEmail || d.fromEmail || '';
+  // If rawFrom looks like an email address, use it as the email field
+  const isEmail   = rawFrom.includes('@');
   return {
-    sender:      d.sender || d.from || d.From || d.senderName || 'Unknown',
-    email:       d.email  || d.senderEmail || d.fromEmail || '',
+    sender:      isEmail ? rawFrom.split('@')[0].replace(/[._]/g, ' ') : (rawFrom || 'Unknown'),
+    email:       isEmail ? rawFrom : rawEmail,
     subject:     d.subject || d.Subject || '(No subject)',
-    body:        d.body   || d.bodyText || d.Body || d.content || d.text || '',
-    time:        d.time   || d.received || d.receivedTime || d.date || d.timestamp || '',
+    body:        htmlToText(d.body || d.bodyText || d.Body || d.content || d.text || ''),
+    time:        d.time || d.received || d.receivedTime || d.date || d.timestamp || '',
     attachments: toArr(d.attachments),
     filename,
     loadedAt: new Date().toISOString(),
