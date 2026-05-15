@@ -1,327 +1,58 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Email Hub</title>
-<style>
-:root {
-  --gold: #F5A800;
-  --gold-grad: linear-gradient(135deg, #F7C52A, #F5A800, #E8990A);
-  --bg:       #0A0A0C;
-  --surface:  #141416;
-  --surface2: #1C1C1F;
-  --border:   rgba(255,255,255,0.08);
-  --border2:  rgba(255,255,255,0.04);
-  --text1: #F2F2F7;
-  --text2: #AEAEB2;
-  --text3: #636366;
-  --safe-top:    env(safe-area-inset-top, 0px);
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { -webkit-text-size-adjust: 100%; }
-
-body {
-  font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
-  background: var(--bg);
-  color: var(--text1);
-  min-height: 100dvh;
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-}
-
-/* ── VIEWS ── */
-.view { display: none; flex-direction: column; min-height: 100dvh; padding-top: var(--safe-top); }
-.view.active { display: flex; }
-
-/* ── HEADER ── */
-.header {
-  position: sticky; top: 0; z-index: 100;
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 20px;
-  background: rgba(10,10,12,0.88);
-  backdrop-filter: saturate(180%) blur(20px);
-  -webkit-backdrop-filter: saturate(180%) blur(20px);
-  border-bottom: 1px solid var(--border2);
-}
-.header-badge {
-  width: 32px; height: 32px; border-radius: 8px;
-  background: var(--gold-grad);
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-.header-badge svg { width: 16px; height: 16px; }
-.header-titles { flex: 1; }
-.header-title { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
-.header-sub   { font-size: 12px; color: var(--text3); margin-top: 1px; }
-.header-clock { font-size: 12px; color: var(--text3); font-variant-numeric: tabular-nums; flex-shrink: 0; }
-
-.back-btn {
-  display: flex; align-items: center; gap: 2px;
-  background: none; border: none;
-  color: var(--gold); font-size: 17px; font-weight: 400;
-  cursor: pointer; padding: 4px 0;
-  -webkit-tap-highlight-color: transparent;
-}
-.back-btn svg { width: 20px; height: 20px; }
-
-/* ── SCROLL ── */
-.scroll {
-  flex: 1; overflow-y: auto;
-  padding: 16px 16px calc(var(--safe-bottom) + 28px);
-  display: flex; flex-direction: column; gap: 12px;
-}
-
-/* ── FILE PICKER ── */
-.pick-wrap { position: relative; }
-.pick-btn {
-  width: 100%; padding: 18px;
-  background: rgba(245,168,0,0.1);
-  border: 1.5px dashed rgba(245,168,0,0.32);
-  border-radius: 20px;
-  display: flex; align-items: center; gap: 14px;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s, transform 0.1s;
-}
-.pick-btn:active { background: rgba(245,168,0,0.2); transform: scale(0.98); }
-.pick-icon {
-  width: 46px; height: 46px; border-radius: 13px;
-  background: var(--gold-grad);
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-.pick-icon svg { width: 22px; height: 22px; color: #000; }
-.pick-label { font-size: 17px; font-weight: 600; color: var(--text1); }
-.pick-hint  { font-size: 13px; color: var(--text3); margin-top: 3px; }
-input[type="file"] {
-  position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer;
-}
-
-/* ── SECTION LABEL ── */
-.section-label {
-  font-size: 11px; font-weight: 600;
-  letter-spacing: 0.5px; text-transform: uppercase;
-  color: var(--text3); padding: 0 4px;
-}
-
-/* ── EMAIL ROW ── */
-.email-row {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 16px; padding: 14px 16px;
-  display: flex; align-items: center; gap: 12px;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s, transform 0.1s;
-  animation: fadeUp 0.3s ease both;
-}
-.email-row:active { background: var(--surface2); transform: scale(0.98); }
-.row-avatar {
-  width: 42px; height: 42px; border-radius: 50%;
-  background: var(--gold-grad);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px; font-weight: 700; color: #000;
-  flex-shrink: 0; letter-spacing: -0.5px;
-}
-.row-info { flex: 1; min-width: 0; }
-.row-sender  { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.row-subject { font-size: 13px; color: var(--text2); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.row-right { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; flex-shrink: 0; }
-.row-time  { font-size: 12px; color: var(--text3); font-variant-numeric: tabular-nums; }
-.row-chev  { color: var(--text3); }
-.row-chev svg { width: 14px; height: 14px; display: block; }
-
-/* ── EMPTY STATE ── */
-.empty {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  padding: 48px 32px; text-align: center; gap: 10px;
-}
-.empty-icon {
-  width: 68px; height: 68px; border-radius: 20px;
-  background: var(--surface);
-  display: flex; align-items: center; justify-content: center; margin-bottom: 6px;
-}
-.empty-icon svg { width: 30px; height: 30px; color: var(--text3); }
-.empty-title { font-size: 18px; font-weight: 600; }
-.empty-desc  { font-size: 14px; color: var(--text3); line-height: 1.55; max-width: 260px; }
-
-/* ── EMAIL CARD ── */
-.email-card {
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 20px; overflow: hidden;
-  animation: fadeUp 0.3s ease both;
-}
-.card-strip { height: 4px; background: var(--gold-grad); }
-.card-meta  { padding: 16px 16px 14px; border-bottom: 1px solid var(--border2); }
-.sender-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
-.avatar {
-  width: 42px; height: 42px; border-radius: 50%;
-  background: var(--gold-grad);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 15px; font-weight: 700; color: #000;
-  flex-shrink: 0; letter-spacing: -0.5px;
-}
-.sender-info  { flex: 1; min-width: 0; }
-.sender-name  { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.sender-email { font-size: 12px; color: var(--text3); margin-top: 1px; }
-.email-time   { font-size: 12px; color: var(--text3); flex-shrink: 0; }
-.email-subject { font-size: 16px; font-weight: 600; letter-spacing: -0.2px; line-height: 1.3; }
-
-.card-body {
-  padding: 14px 16px;
-  font-size: 14px; color: var(--text2); line-height: 1.65;
-  white-space: pre-wrap; word-break: break-word;
-  max-height: 200px; overflow: hidden; position: relative;
-}
-.card-body.expanded { max-height: none; }
-.card-body:not(.expanded)::after {
-  content: ''; position: absolute;
-  bottom: 0; left: 0; right: 0; height: 50px;
-  background: linear-gradient(transparent, var(--surface));
-  pointer-events: none;
-}
-
-.expand-btn {
-  width: 100%; padding: 10px 16px 14px;
-  background: none; border: none;
-  font-size: 13px; font-weight: 500; color: var(--gold);
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-  display: flex; align-items: center; justify-content: center; gap: 4px;
-}
-.expand-btn svg { width: 14px; height: 14px; transition: transform 0.25s; }
-.expand-btn.open svg { transform: rotate(180deg); }
-
-.attach-row { padding: 0 16px 14px; display: flex; flex-wrap: wrap; gap: 6px; }
-.attach-chip {
-  display: flex; align-items: center; gap: 5px;
-  padding: 5px 10px;
-  background: var(--surface2); border: 1px solid var(--border);
-  border-radius: 20px; font-size: 12px; color: var(--text2); font-weight: 500;
-}
-.attach-chip svg { width: 11px; height: 11px; color: var(--gold); }
-
-/* ── ACTIONS ── */
-.actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.action-btn {
-  display: flex; flex-direction: column; align-items: flex-start; gap: 8px;
-  padding: 16px;
-  background: var(--surface); border: 1px solid var(--border);
-  border-radius: 20px; min-height: 100px;
-  cursor: pointer; -webkit-tap-highlight-color: transparent; text-align: left;
-  transition: background 0.15s, transform 0.1s;
-  -webkit-user-select: none; user-select: none;
-}
-.action-btn:active { transform: scale(0.96); background: var(--surface2); }
-.action-btn.primary { background: rgba(245,168,0,0.1); border-color: rgba(245,168,0,0.25); }
-.action-btn.primary:active { background: rgba(245,168,0,0.18); }
-.action-btn.wide { grid-column: 1 / -1; flex-direction: row; align-items: center; min-height: auto; gap: 14px; }
-
-.act-icon {
-  width: 36px; height: 36px; border-radius: 10px;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-.act-icon svg { width: 18px; height: 18px; }
-.i-reply    { background: rgba(52,199,89,0.15);  color: #34C759; }
-.i-summary  { background: rgba(10,132,255,0.15); color: #0A84FF; }
-.i-tech     { background: rgba(255,159,10,0.15); color: #FF9F0A; }
-.i-task     { background: rgba(191,90,242,0.15); color: #BF5AF2; }
-.i-escalate { background: rgba(255,69,58,0.15);  color: #FF453A; }
-
-.act-label { font-size: 14px; font-weight: 600; letter-spacing: -0.2px; color: var(--text1); }
-.act-desc  { font-size: 11px; color: var(--text3); line-height: 1.3; margin-top: 3px; }
-
-/* ── OPEN ROW ── */
-.open-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.open-btn {
-  padding: 14px; border-radius: 14px;
-  border: 1px solid var(--border); background: var(--surface);
-  font-size: 14px; font-weight: 500; color: var(--text2);
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  transition: background 0.15s, transform 0.1s;
-}
-.open-btn:active { transform: scale(0.97); background: var(--surface2); }
-.open-btn svg { width: 16px; height: 16px; }
-.open-btn.claude  { background: rgba(203,166,247,0.08); border-color: rgba(203,166,247,0.2); color: #CBA6F7; }
-.open-btn.outlook { background: rgba(10,132,255,0.08);  border-color: rgba(10,132,255,0.2);  color: #0A84FF; }
-
-/* ── TOAST ── */
-.toast {
-  position: fixed;
-  bottom: calc(var(--safe-bottom) + 90px);
-  left: 50%; transform: translateX(-50%) translateY(20px);
-  background: rgba(28,28,30,0.96);
-  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-  border: 1px solid var(--border); border-radius: 40px;
-  padding: 11px 22px; font-size: 14px; font-weight: 500; color: var(--text1);
-  white-space: nowrap; opacity: 0;
-  transition: opacity 0.2s, transform 0.28s cubic-bezier(0.34,1.56,0.64,1);
-  z-index: 999; pointer-events: none;
-  display: flex; align-items: center; gap: 8px;
-}
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0A0A0C">
+  <title>JP Hub</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
 </head>
 <body>
 
-<!-- ══════════════════════ INBOX VIEW ══════════════════════ -->
+<!-- ══════════════════════════════════════════════
+     INBOX VIEW
+══════════════════════════════════════════════ -->
 <div class="view active" id="inboxView">
-  <header class="header">
+
+  <header class="app-header">
     <div class="header-badge">
+      <!-- envelope icon -->
       <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
         <polyline points="22,6 12,13 2,6"/>
       </svg>
     </div>
     <div class="header-titles">
-      <div class="header-title">Email Hub</div>
+      <div class="header-title">JP Hub</div>
       <div class="header-sub">AI Workflow Controller</div>
     </div>
-    <div class="header-clock" id="clock1"></div>
+    <div class="header-clock" id="appClock"></div>
   </header>
 
-  <div class="scroll">
+  <nav class="quick-nav">
     <div class="pick-wrap">
-      <div class="pick-btn">
-        <div class="pick-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
-          </svg>
-        </div>
-        <div>
-          <div class="pick-label">Open Email File</div>
-          <div class="pick-hint">Browse OneDrive &rsaquo; Pending Emails</div>
-        </div>
-      </div>
+      <button class="quick-btn">&#128193; Open Email</button>
       <input type="file" accept=".json,application/json,text/plain,*/*" id="filePicker">
     </div>
+    <button class="quick-btn" onclick="openOneDrive()">OneDrive</button>
+    <button class="quick-btn" onclick="openOutlookLink()">Outlook</button>
+  </nav>
 
-    <!-- Paste fallback -->
-    <details id="pasteSection" style="background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;">
-      <summary style="padding:14px 16px;font-size:14px;font-weight:500;color:var(--text2);cursor:pointer;list-style:none;display:flex;align-items:center;gap:8px;-webkit-tap-highlight-color:transparent;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
-        File not opening? Paste JSON instead
-      </summary>
-      <div style="padding:0 16px 16px;display:flex;flex-direction:column;gap:10px;">
-        <textarea id="pasteInput" placeholder="Paste the contents of the JSON file here..." style="width:100%;height:120px;background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:12px;font-family:inherit;font-size:13px;color:var(--text1);resize:none;outline:none;-webkit-appearance:none;line-height:1.5;"></textarea>
-        <button onclick="loadPasted()" style="padding:13px;background:var(--gold-grad);border:none;border-radius:12px;font-size:15px;font-weight:600;color:#000;cursor:pointer;-webkit-tap-highlight-color:transparent;">Load Email</button>
-      </div>
-    </details>
+  <div class="scroll">
 
+    <!-- Recents -->
     <div id="recentSection" style="display:none; flex-direction:column; gap:12px;">
       <div class="section-label">Recent</div>
       <div id="recentList"></div>
     </div>
 
-    <div class="empty" id="emptyState">
+    <!-- Empty state -->
+    <div class="empty-state" id="emptyState">
       <div class="empty-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
           <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
@@ -329,436 +60,102 @@ input[type="file"] {
         </svg>
       </div>
       <div class="empty-title">No Recent Emails</div>
-      <div class="empty-desc">Tap above to open an email JSON file from your OneDrive Pending Emails folder.</div>
+      <div class="empty-desc">Tap "Open Email" above to load an email JSON file from your OneDrive Pending Emails folder.</div>
     </div>
+
+    <!-- Paste fallback -->
+    <details class="paste-details">
+      <summary class="paste-summary">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+          <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+        </svg>
+        File not opening? Paste JSON instead
+      </summary>
+      <div class="paste-body">
+        <textarea id="pasteInput" placeholder="Paste the contents of the JSON file here..."></textarea>
+        <button class="paste-load-btn" onclick="loadPasted()">Load Email</button>
+      </div>
+    </details>
+
   </div>
 </div>
 
-<!-- ══════════════════════ EMAIL VIEW ══════════════════════ -->
+<!-- ══════════════════════════════════════════════
+     EMAIL VIEW
+══════════════════════════════════════════════ -->
 <div class="view" id="emailView">
-  <header class="header">
-    <button class="back-btn" onclick="showInbox()">
+
+  <header class="app-header">
+    <button class="back-btn" onclick="goInbox()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="15 18 9 12 15 6"/>
       </svg>
       Inbox
     </button>
     <div style="flex:1"></div>
-    <div class="header-clock" id="clock2"></div>
   </header>
+
   <div class="scroll" id="emailScroll"></div>
 </div>
 
-<!-- ══════════════════════ TOAST ══════════════════════ -->
-<div class="toast" id="toast">
-  <span id="toastIcon">&#10003;</span>
-  <span id="toastMsg">Copied</span>
+<!-- ══════════════════════════════════════════════
+     TASKS VIEW
+══════════════════════════════════════════════ -->
+<div class="view" id="tasksView">
+
+  <header class="app-header">
+    <div class="header-badge">
+      <!-- checklist icon -->
+      <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="9 11 12 14 22 4"/>
+        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+      </svg>
+    </div>
+    <div class="header-titles">
+      <div class="header-title">Tasks</div>
+    </div>
+  </header>
+
+  <div class="scroll">
+    <div class="task-input-row">
+      <input id="newTaskInput" placeholder="Add a task...">
+      <button class="add-task-btn" onclick="addTaskManually()">Add</button>
+    </div>
+    <div class="task-count" id="taskCount"></div>
+    <div id="taskList"></div>
+  </div>
 </div>
 
-<script>
-/* ── STATE ── */
-let currentEmail = null;
-let bodyExpanded = false;
-const MAX_RECENT = 10;
+<!-- ══════════════════════════════════════════════
+     TAB BAR
+══════════════════════════════════════════════ -->
+<nav class="tab-bar">
+  <button class="tab active" id="tab-inbox" onclick="goInbox()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+      <polyline points="22,6 12,13 2,6"/>
+    </svg>
+    Inbox
+  </button>
+  <button class="tab" id="tab-tasks" onclick="goTasks()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="9 11 12 14 22 4"/>
+      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+    </svg>
+    Tasks
+  </button>
+</nav>
 
-/* ── CLOCK ── */
-function tick() {
-  const t = new Date().toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', hour12:true });
-  document.getElementById('clock1').textContent = t;
-  document.getElementById('clock2').textContent = t;
-}
-tick();
-setInterval(tick, 30000);
+<!-- ══════════════════════════════════════════════
+     TOAST
+══════════════════════════════════════════════ -->
+<div class="toast" id="toast">
+  <span id="toastIcon"></span>
+  <span id="toastMsg"></span>
+</div>
 
-/* ── VIEWS ── */
-function showInbox() {
-  document.getElementById('inboxView').classList.add('active');
-  document.getElementById('emailView').classList.remove('active');
-  renderRecents();
-}
-function showEmailView() {
-  document.getElementById('inboxView').classList.remove('active');
-  document.getElementById('emailView').classList.add('active');
-  document.getElementById('emailScroll').scrollTop = 0;
-}
+<script type="module" src="js/app.js"></script>
 
-/* ── FILE PICKER ── */
-document.getElementById('filePicker').addEventListener('change', function(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
-    try {
-      let text = ev.target.result;
-      // Strip UTF-8 BOM
-      if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-      parseAndLoad(text, file.name);
-    } catch (err) {
-      alert('Read error: ' + err.message);
-    }
-  };
-  reader.onerror = () => alert('FileReader failed — try the Paste option below instead.');
-  reader.readAsText(file, 'UTF-8');
-  this.value = '';
-});
-
-/* ── PASTE FALLBACK ── */
-function loadPasted() {
-  const text = document.getElementById('pasteInput').value.trim();
-  if (!text) { showToast('&#9888;', 'Nothing pasted yet'); return; }
-  try {
-    parseAndLoad(text, 'pasted');
-    document.getElementById('pasteInput').value = '';
-  } catch (err) {
-    alert('Parse error: ' + err.message);
-  }
-}
-
-function parseAndLoad(text, filename) {
-  // Strip BOM
-  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-
-  // Power Automate saves invalid JSON — unescaped quotes and literal newlines in the body.
-  // Skip JSON.parse entirely and extract fields directly from raw text.
-  const data = extractFields(text);
-
-  if (!data.from && !data.subject) {
-    throw new Error('Could not find email fields in file. Is this a Pending Emails JSON?');
-  }
-
-  const email = normalise(data, filename);
-  saveRecent(email);
-  openEmail(email);
-}
-
-function extractFields(text) {
-  const pluck = (key) => {
-    // Match simple string fields that don't contain broken quotes
-    const m = text.match(new RegExp('"' + key + '"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"'));
-    return m ? m[1] : '';
-  };
-
-  const from     = pluck('from');
-  const subject  = pluck('subject');
-  const received = pluck('received');
-
-  // Body is the messy field — extract everything between "body":" and the ","received" boundary
-  let body = '';
-  const bodyStart = text.indexOf('"body":"');
-  const bodyEnd   = text.lastIndexOf('","received"');
-  if (bodyStart !== -1 && bodyEnd > bodyStart) {
-    body = text.slice(bodyStart + 8, bodyEnd);
-  } else if (bodyStart !== -1) {
-    // fallback: grab to end
-    body = text.slice(bodyStart + 8, text.lastIndexOf('"}'));
-  }
-
-  return { from, subject, body, received };
-}
-
-/* ── STRIP HTML → PLAIN TEXT ── */
-function htmlToText(html) {
-  if (!html) return '';
-  // If it doesn't look like HTML, return as-is
-  if (!html.trim().startsWith('<')) return html;
-  const tmp = document.createElement('div');
-  tmp.innerHTML = html;
-  // Remove script/style blocks entirely
-  tmp.querySelectorAll('script, style').forEach(el => el.remove());
-  // Replace <br> and <p> with newlines before extracting text
-  tmp.querySelectorAll('br').forEach(el => el.replaceWith('\n'));
-  tmp.querySelectorAll('p, div').forEach(el => el.prepend('\n'));
-  return tmp.textContent.replace(/\n{3,}/g, '\n\n').trim();
-}
-
-/* ── NORMALISE ── */
-function normalise(d, filename) {
-  // Power Automate saves: { from, subject, body (HTML), received }
-  const rawFrom   = d.from || d.sender || d.From || d.senderName || '';
-  const rawEmail  = d.email || d.senderEmail || d.fromEmail || '';
-  // If rawFrom looks like an email address, use it as the email field
-  const isEmail   = rawFrom.includes('@');
-  return {
-    sender:      isEmail ? rawFrom.split('@')[0].replace(/[._]/g, ' ') : (rawFrom || 'Unknown'),
-    email:       isEmail ? rawFrom : rawEmail,
-    subject:     d.subject || d.Subject || '(No subject)',
-    body:        htmlToText(d.body || d.bodyText || d.Body || d.content || d.text || ''),
-    time:        d.time || d.received || d.receivedTime || d.date || d.timestamp || '',
-    attachments: toArr(d.attachments),
-    filename,
-    loadedAt: new Date().toISOString(),
-  };
-}
-
-function toArr(raw) {
-  if (!raw || !Array.isArray(raw)) return [];
-  return raw.map(a => typeof a === 'string' ? a : (a.name || a.filename || '?'));
-}
-
-/* ── RECENTS ── */
-function saveRecent(email) {
-  const list = getRecents().filter(r => !(r.sender === email.sender && r.subject === email.subject));
-  list.unshift(email);
-  try { localStorage.setItem('eh_recents', JSON.stringify(list.slice(0, MAX_RECENT))); } catch {}
-}
-function getRecents() {
-  try { return JSON.parse(localStorage.getItem('eh_recents') || '[]'); } catch { return []; }
-}
-
-function renderRecents() {
-  const list = getRecents();
-  const sec  = document.getElementById('recentSection');
-  const emp  = document.getElementById('emptyState');
-  const el   = document.getElementById('recentList');
-
-  if (!list.length) {
-    sec.style.display = 'none';
-    emp.style.display = 'flex';
-    return;
-  }
-  sec.style.display = 'flex';
-  emp.style.display = 'none';
-
-  el.innerHTML = '';
-  list.forEach((email, i) => {
-    const row = document.createElement('div');
-    row.className = 'email-row';
-    row.style.animationDelay = `${i * 0.04}s`;
-    row.innerHTML = `
-      <div class="row-avatar">${initials(email.sender)}</div>
-      <div class="row-info">
-        <div class="row-sender">${esc(email.sender)}</div>
-        <div class="row-subject">${esc(email.subject)}</div>
-      </div>
-      <div class="row-right">
-        <div class="row-time">${fmtTime(email.time || email.loadedAt)}</div>
-        <div class="row-chev">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <polyline points="9 18 15 12 9 6"/>
-          </svg>
-        </div>
-      </div>`;
-    row.addEventListener('click', () => openEmail(email));
-    el.appendChild(row);
-  });
-}
-
-/* ── OPEN EMAIL ── */
-function openEmail(email) {
-  currentEmail = email;
-  bodyExpanded = false;
-  renderEmail();
-  showEmailView();
-}
-
-function renderEmail() {
-  const e = currentEmail;
-  const hasLong = e.body && e.body.length > 300;
-
-  const attachHTML = e.attachments.length ? `
-    <div class="attach-row">
-      ${e.attachments.map(a => `
-        <div class="attach-chip">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
-          </svg>
-          ${esc(a)}
-        </div>`).join('')}
-    </div>` : '';
-
-  document.getElementById('emailScroll').innerHTML = `
-    <div class="email-card">
-      <div class="card-strip"></div>
-      <div class="card-meta">
-        <div class="sender-row">
-          <div class="avatar">${initials(e.sender)}</div>
-          <div class="sender-info">
-            <div class="sender-name">${esc(e.sender)}</div>
-            ${e.email ? `<div class="sender-email">${esc(e.email)}</div>` : ''}
-          </div>
-          <div class="email-time">${fmtTime(e.time)}</div>
-        </div>
-        <div class="email-subject">${esc(e.subject)}</div>
-      </div>
-      <div class="card-body" id="cardBody">${esc(e.body).replace(/\n/g,'<br>') || '<span style="color:var(--text3)">No body</span>'}</div>
-      ${hasLong ? `
-        <button class="expand-btn" id="expandBtn" onclick="toggleBody()">
-          Show more
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="6 9 12 15 18 9"/>
-          </svg>
-        </button>` : ''}
-      ${attachHTML}
-    </div>
-
-    <div class="section-label">Actions</div>
-
-    <div class="actions-grid">
-      <button class="action-btn primary" onclick="act('reply')">
-        <div class="act-icon i-reply">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 17 4 12 9 7"/><path d="M20 18v-2a4 4 0 0 0-4-4H4"/>
-          </svg>
-        </div>
-        <div class="act-label">Draft Reply</div>
-        <div class="act-desc">Smart reply via assistant</div>
-      </button>
-
-      <button class="action-btn" onclick="act('summarise')">
-        <div class="act-icon i-summary">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
-            <line x1="8" y1="18" x2="21" y2="18"/>
-            <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
-          </svg>
-        </div>
-        <div class="act-label">Summarise</div>
-        <div class="act-desc">Key points and actions</div>
-      </button>
-
-      <button class="action-btn" onclick="act('tech')">
-        <div class="act-icon i-tech">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
-          </svg>
-        </div>
-        <div class="act-label">Tech Services</div>
-        <div class="act-desc">Work order or fault report</div>
-      </button>
-
-      <button class="action-btn" onclick="act('task')">
-        <div class="act-icon i-task">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 11 12 14 22 4"/>
-            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
-          </svg>
-        </div>
-        <div class="act-label">Create Task</div>
-        <div class="act-desc">Extract action items</div>
-      </button>
-
-      <button class="action-btn wide" onclick="act('escalate')">
-        <div class="act-icon i-escalate">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-        </div>
-        <div>
-          <div class="act-label">Escalate to Chris</div>
-          <div class="act-desc">Draft escalation for your manager</div>
-        </div>
-      </button>
-    </div>
-
-    <div class="open-row">
-      <button class="open-btn claude" onclick="openClaude()">
-        <svg viewBox="0 0 24 24" fill="currentColor">
-          <circle cx="12" cy="12" r="10" opacity="0.25"/><circle cx="12" cy="12" r="6"/>
-        </svg>
-        Open Claude
-      </button>
-      <button class="open-btn outlook" onclick="openOutlook()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-          <polyline points="22,6 12,13 2,6"/>
-        </svg>
-        Outlook
-      </button>
-    </div>
-  `;
-}
-
-/* ── EXPAND BODY ── */
-function toggleBody() {
-  bodyExpanded = !bodyExpanded;
-  document.getElementById('cardBody').classList.toggle('expanded', bodyExpanded);
-  const btn = document.getElementById('expandBtn');
-  if (btn) {
-    btn.classList.toggle('open', bodyExpanded);
-    btn.childNodes[0].textContent = bodyExpanded ? 'Show less ' : 'Show more ';
-  }
-}
-
-/* ── BUILD CONTEXT ── */
-function emailCtx() {
-  const e = currentEmail;
-  let s = `From: ${e.sender}`;
-  if (e.email) s += ` <${e.email}>`;
-  s += `\nSubject: ${e.subject}`;
-  if (e.time) s += `\nReceived: ${e.time}`;
-  if (e.attachments.length) s += `\nAttachments: ${e.attachments.join(', ')}`;
-  return s + `\n\n${e.body}`;
-}
-
-/* ── PROMPTS ── */
-const PROMPTS = {
-  reply:     c => `Use email assistant skill.\n\nDraft a reply to this email:\n\n${c}`,
-  summarise: c => `Use email assistant skill.\n\nSummarise in 3 bullets — what they want, key questions, required action:\n\n${c}`,
-  tech:      c => `Use email assistant skill.\n\nGenerate a tech services work order, fault report, or loan unit request based on this email:\n\n${c}`,
-  task:      c => `Use email assistant skill.\n\nExtract all action items as a numbered list with priority (High / Medium / Low):\n\n${c}`,
-  escalate:  c => `Use email assistant skill.\n\nDraft an escalation to my manager Chris Waxman (Executive Territory Manager, Stryker South Pacific). Include the issue, why it needs escalation, and what I need from him:\n\n${c}`,
-};
-
-function act(type) {
-  const prompt = PROMPTS[type](emailCtx());
-  copyText(prompt)
-    .then(() => {
-      showToast('&#10003;', 'Prompt copied — paste into Claude');
-      setTimeout(openClaude, 950);
-    })
-    .catch(() => showToast('&#9888;', 'Clipboard blocked — copy manually'));
-}
-
-/* ── CLIPBOARD ── */
-function copyText(text) {
-  if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(text);
-  return new Promise((res, rej) => {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    ta.style.cssText = 'position:fixed;opacity:0;top:0;left:0;';
-    document.body.appendChild(ta);
-    ta.focus(); ta.select();
-    try { document.execCommand('copy') ? res() : rej(); } catch(err) { rej(err); }
-    document.body.removeChild(ta);
-  });
-}
-
-/* ── OPEN APPS ── */
-function openClaude()  { window.location.href = 'claude://'; }
-function openOutlook() {
-  window.location.href = 'ms-outlook://';
-  setTimeout(() => window.open('https://outlook.office.com', '_blank'), 1200);
-}
-
-/* ── TOAST ── */
-let toastT;
-function showToast(icon, msg) {
-  document.getElementById('toastIcon').innerHTML = icon;
-  document.getElementById('toastMsg').textContent = msg;
-  const el = document.getElementById('toast');
-  el.classList.add('show');
-  clearTimeout(toastT);
-  toastT = setTimeout(() => el.classList.remove('show'), 2800);
-}
-
-/* ── UTILS ── */
-function initials(name) {
-  const p = String(name).trim().split(' ');
-  return p.length >= 2 ? (p[0][0] + p[1][0]).toUpperCase() : String(name).slice(0,2).toUpperCase();
-}
-function esc(s) {
-  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-function fmtTime(raw) {
-  if (!raw) return '';
-  const d = new Date(raw);
-  if (isNaN(d)) return raw;
-  return d.toLocaleTimeString('en-AU', { hour:'2-digit', minute:'2-digit', hour12:true });
-}
-
-/* ── INIT ── */
-renderRecents();
-</script>
 </body>
 </html>

@@ -1,0 +1,53 @@
+/* ── DESIGN TOKENS ── */
+:root {
+  --gold: #F5A800;
+  --gold-grad: linear-gradient(135deg, #F7C52A, #F5A800, #E8990A);
+  --bg:       #0A0A0C;
+  --surface:  #141416;
+  --surface2: #1C1C1F;
+  --border:   rgba(255,255,255,0.08);
+  --border2:  rgba(255,255,255,0.04);
+  --text1: #F2F2F7;
+  --text2: #AEAEB2;
+  --text3: #636366;
+  --safe-top:    env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* ── RESET ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: -apple-system, 'SF Pro Text', 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  color: var(--text1);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── ANIMATIONS ── */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes taskComplete {
+  0%   { opacity: 1; transform: translateX(0); }
+  100% { opacity: 0; transform: translateX(40px); }
+}
+
+@keyframes checkBounce {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.35); }
+  70%  { transform: scale(0.88); }
+  100% { transform: scale(1); }
+}
