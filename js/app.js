@@ -133,12 +133,7 @@ window.openOneDrive = function () {
 };
 
 window.openOutlookLink = function () {
-  const url = CONFIG.links.outlook;
-  if (url) window.open(url, '_blank');
-  else {
-    window.location.href = 'ms-outlook://';
-    setTimeout(() => window.open('https://outlook.office.com', '_blank'), 1200);
-  }
+  window.open(CONFIG.links.outlook || 'https://outlook.office.com', '_blank');
 };
 
 // ── PASTE FALLBACK ──

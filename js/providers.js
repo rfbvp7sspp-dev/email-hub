@@ -2,8 +2,8 @@ import { CONFIG } from './config.js';
 import { showToast } from './ui.js';
 
 /**
- * Copy prompt to clipboard then open the provider app.
- * Falls back to execCommand for older Safari.
+ * Copy prompt to clipboard then open the provider in a separate tab,
+ * leaving JP Hub open in its own tab.
  * @param {string} prompt   - The full prompt text to copy.
  * @param {string} provider - Key from CONFIG.providers.
  */
@@ -14,40 +14,30 @@ export function copyAndOpen(prompt, provider) {
     return;
   }
 
+  // Reserve the new tab synchronously inside the click gesture, otherwise
+  // the browser blocks it as a popup once the clipboard promise resolves.
+  const tab = window.open('', '_blank');
+
   _copyText(prompt)
     .then(() => {
       showToast('&#10003;', `Copied — opening ${cfg.label}`);
-      setTimeout(() => openProvider(provider), 950);
+      if (tab) tab.location.href = cfg.webUrl;
+      else window.open(cfg.webUrl, '_blank'); // popup blocked — best effort
     })
     .catch(() => {
+      if (tab) tab.close();
       showToast('&#9888;', 'Clipboard blocked — copy manually');
     });
 }
 
 /**
- * Open a provider by deep link, falling back to the web URL if the app
- * doesn't open. Uses visibilitychange to detect whether the app launched —
- * if the page goes hidden the app opened, so we skip the web fallback.
+ * Open a provider's web version in a separate tab.
  * @param {string} key - Key from CONFIG.providers.
  */
 export function openProvider(key) {
   const cfg = CONFIG.providers[key];
   if (!cfg) return;
-
-  let appOpened = false;
-  const onHide = () => { appOpened = true; };
-  document.addEventListener('visibilitychange', onHide, { once: true });
-
-  window.location.href = cfg.deepLink;
-
-  setTimeout(() => {
-    document.removeEventListener('visibilitychange', onHide);
-    if (!appOpened) {
-      // App didn't open — navigate to web version in the same tab
-      // (window.open is always blocked by Safari in a timeout).
-      window.location.href = cfg.webUrl;
-    }
-  }, 1500);
+  window.open(cfg.webUrl, '_blank');
 }
 
 // ── INTERNAL ──
