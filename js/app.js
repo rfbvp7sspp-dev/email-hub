@@ -133,7 +133,20 @@ window.openOneDrive = function () {
 };
 
 window.openOutlookLink = function () {
-  window.open(CONFIG.links.outlook || 'https://outlook.office.com', '_blank');
+  // Open the Outlook app via deep link in a separate tab so JP Hub is
+  // preserved. Fall back to the web version if the app doesn't launch.
+  let appOpened = false;
+  const onHide = () => { appOpened = true; };
+  document.addEventListener('visibilitychange', onHide, { once: true });
+
+  const tab = window.open('ms-outlook://', '_blank');
+
+  setTimeout(() => {
+    document.removeEventListener('visibilitychange', onHide);
+    if (!appOpened && tab && !tab.closed) {
+      tab.location.href = CONFIG.links.outlook || 'https://outlook.office.com';
+    }
+  }, 1500);
 };
 
 // ── PASTE FALLBACK ──

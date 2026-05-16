@@ -2,8 +2,9 @@ import { CONFIG } from './config.js';
 import { showToast } from './ui.js';
 
 /**
- * Copy prompt to clipboard then open the provider in a separate tab,
- * leaving JP Hub open in its own tab.
+ * Copy prompt to clipboard then launch the provider's native app.
+ * The deep link is opened via window.open so the JP Hub page is never
+ * replaced — JP Hub stays alive in the background and is one swipe away.
  * @param {string} prompt   - The full prompt text to copy.
  * @param {string} provider - Key from CONFIG.providers.
  */
@@ -14,30 +15,36 @@ export function copyAndOpen(prompt, provider) {
     return;
   }
 
-  // Reserve the new tab synchronously inside the click gesture, otherwise
-  // the browser blocks it as a popup once the clipboard promise resolves.
-  const tab = window.open('', '_blank');
-
+  // Fire the clipboard write inside the click gesture.
   _copyText(prompt)
-    .then(() => {
-      showToast('&#10003;', `Copied — opening ${cfg.label}`);
-      if (tab) tab.location.href = cfg.webUrl;
-      else window.open(cfg.webUrl, '_blank'); // popup blocked — best effort
-    })
-    .catch(() => {
-      if (tab) tab.close();
-      showToast('&#9888;', 'Clipboard blocked — copy manually');
-    });
+    .then(() => showToast('&#10003;', `Copied — opening ${cfg.label}`))
+    .catch(() => showToast('&#9888;', 'Clipboard blocked — copy manually'));
+
+  openProvider(provider);
 }
 
 /**
- * Open a provider's web version in a separate tab.
+ * Launch a provider's native app via its deep link, opened in a separate
+ * tab so the JP Hub page is preserved. If the app doesn't launch within
+ * 1.5s, that tab falls back to the provider's web version.
  * @param {string} key - Key from CONFIG.providers.
  */
 export function openProvider(key) {
   const cfg = CONFIG.providers[key];
   if (!cfg) return;
-  window.open(cfg.webUrl, '_blank');
+
+  let appOpened = false;
+  const onHide = () => { appOpened = true; };
+  document.addEventListener('visibilitychange', onHide, { once: true });
+
+  const tab = window.open(cfg.deepLink, '_blank');
+
+  setTimeout(() => {
+    document.removeEventListener('visibilitychange', onHide);
+    if (!appOpened && tab && !tab.closed) {
+      tab.location.href = cfg.webUrl;
+    }
+  }, 1500);
 }
 
 // ── INTERNAL ──
