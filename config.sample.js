@@ -26,4 +26,8 @@ export const SETTINGS_TEMPLATE = {
   // Optional Outlook web link. The app deep-links to the Outlook app first
   // and only falls back to this URL if the app does not launch.
   outlookLink: '',
+
+  // Name/title injected into escalation prompts via the {{recipient}} token.
+  // Kept here (device-local) so no real names live in the public repo.
+  escalationRecipient: '',
 };

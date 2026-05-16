@@ -29,5 +29,5 @@ export function buildPrompt(action, email, provider) {
   if (!group) throw new Error(`Unknown action: ${action}`);
   const fn = group[provider] || group.claude;
   const recipient = getSettings().escalationRecipient || 'my manager';
-  return fn(buildEmailContext(email)).replace(/\{\{recipient\}\}/g, recipient);
+  return fn(buildEmailContext(email)).replace(/\{\{recipient\}\}/g, () => recipient);
 }

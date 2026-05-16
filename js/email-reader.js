@@ -24,14 +24,17 @@ function extractFields(text) {
 }
 
 // ── HTML STRIP ──
+// Email bodies are untrusted external content. DOMParser produces an inert
+// document — no resource loads, no event handlers (e.g. <img onerror>), no
+// script execution — so parsing crafted HTML cannot run code in this origin.
+// Never use innerHTML here: that fires inline handlers on assignment.
 function htmlToText(html) {
   if (!html || !html.trim().startsWith('<')) return html;
-  const tmp = document.createElement('div');
-  tmp.innerHTML = html;
-  tmp.querySelectorAll('script, style').forEach(el => el.remove());
-  tmp.querySelectorAll('br').forEach(el => el.replaceWith('\n'));
-  tmp.querySelectorAll('p, div').forEach(el => el.prepend('\n'));
-  return tmp.textContent.replace(/\n{3,}/g, '\n\n').trim();
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  doc.querySelectorAll('script, style').forEach(el => el.remove());
+  doc.querySelectorAll('br').forEach(el => el.replaceWith('\n'));
+  doc.querySelectorAll('p, div').forEach(el => el.prepend('\n'));
+  return doc.body.textContent.replace(/\n{3,}/g, '\n\n').trim();
 }
 
 // ── NORMALISE ──
