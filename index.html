@@ -345,6 +345,17 @@
         <input id="setOutlook" class="field-input" type="url" placeholder="Outlook web link (optional)" autocomplete="off">
       </div>
 
+      <div class="field-group">
+        <label class="field-label">Escalation Recipient</label>
+        <input id="setEscalation" class="field-input" type="text" placeholder="e.g. Manager name, title" autocomplete="off">
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Data Hygiene</label>
+        <button class="data-clear-btn" onclick="clearLocalData()">Clear cached data on this device</button>
+        <div class="settings-note">Removes locally cached emails, tasks, and debriefs. Settings are kept.</div>
+      </div>
+
     </div>
 
     <div class="modal-footer">

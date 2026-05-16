@@ -7,11 +7,16 @@ import { showToast } from './ui.js';
 const SETTINGS_KEY = 'jphub_settings';
 
 const DEFAULTS = {
-  endpoint:     '',
-  apiKey:       '',
-  oneDriveLink: '',
-  outlookLink:  '',
+  endpoint:            '',
+  apiKey:              '',
+  oneDriveLink:        '',
+  outlookLink:         '',
+  escalationRecipient: '',
 };
+
+// Operational data keys — cleared by the "Clear local data" control.
+// jphub_settings is intentionally excluded so config survives a purge.
+const DATA_KEYS = ['jphub_recents', 'jphub_tasks', 'jphub_debriefs'];
 
 export function getSettings() {
   try {
@@ -31,10 +36,11 @@ export function saveSettings(patch) {
 
 export function openSettings() {
   const s = getSettings();
-  _set('setEndpoint', s.endpoint);
-  _set('setApiKey',   s.apiKey);
-  _set('setOneDrive', s.oneDriveLink);
-  _set('setOutlook',  s.outlookLink);
+  _set('setEndpoint',   s.endpoint);
+  _set('setApiKey',     s.apiKey);
+  _set('setOneDrive',   s.oneDriveLink);
+  _set('setOutlook',    s.outlookLink);
+  _set('setEscalation', s.escalationRecipient);
   document.getElementById('settingsModal')?.classList.add('open');
 }
 
@@ -44,19 +50,38 @@ export function closeSettings() {
 
 export function submitSettings() {
   saveSettings({
-    endpoint:     _get('setEndpoint'),
-    apiKey:       _get('setApiKey'),
-    oneDriveLink: _get('setOneDrive'),
-    outlookLink:  _get('setOutlook'),
+    endpoint:            _get('setEndpoint'),
+    apiKey:              _get('setApiKey'),
+    oneDriveLink:        _get('setOneDrive'),
+    outlookLink:         _get('setOutlook'),
+    escalationRecipient: _get('setEscalation'),
   });
   closeSettings();
   showToast('&#10003;', 'Settings saved on this device');
+}
+
+// Purge cached operational data from this device. Settings are kept.
+export function clearLocalData() {
+  DATA_KEYS.forEach(k => {
+    try { localStorage.removeItem(k); } catch {}
+  });
 }
 
 export function initSettingsHandlers() {
   window.openSettings   = openSettings;
   window.closeSettings  = closeSettings;
   window.submitSettings = submitSettings;
+
+  window.clearLocalData = () => {
+    const ok = confirm(
+      'Clear cached emails, tasks, and debriefs from this device?\n\n' +
+      'Your Settings are kept. This cannot be undone.'
+    );
+    if (!ok) return;
+    clearLocalData();
+    showToast('&#128465;', 'Local data cleared');
+    setTimeout(() => location.reload(), 700);
+  };
 }
 
 function _set(id, v) { const el = document.getElementById(id); if (el) el.value = v || ''; }

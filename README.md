@@ -1,6 +1,6 @@
 # JP Hub
 
-A mobile-first web app that turns Stryker email JSON files into AI-ready prompts — no login, no API keys, no build step.
+A mobile-first web app that turns email JSON files into AI-ready prompts — no login, no API keys, no build step.
 
 ---
 
@@ -30,39 +30,28 @@ To use icons on the home screen, add two PNG files to the repo root:
 
 ---
 
-## Configure OneDrive link
+## Configure links and identity
 
-Open `js/config.js` and set:
+Open the in-app **Settings** screen (gear icon, top right of the Today view).
+All private values are stored in `localStorage` on your device only — never
+committed to this repo:
 
-```js
-links: {
-  oneDrive: 'https://your-onedrive-share-link-here',
-}
-```
+- **Backend Endpoint** / **API Key** — Power Automate HTTP flow (Phase 2)
+- **OneDrive Link** — jump straight to your private folder
+- **Outlook Link** — optional; the Outlook button deep-links to the app first
+- **Escalation Recipient** — name/title injected into escalation prompts
 
-Tap the **OneDrive** button in the quick nav to jump straight to your Pending Emails folder.
-
----
-
-## Configure Outlook link
-
-Open `js/config.js` and set:
-
-```js
-links: {
-  outlook: 'https://your-outlook-url-here',
-}
-```
-
-If left blank, the Outlook button will attempt the `ms-outlook://` deep link first, then fall back to `outlook.office.com`.
+This repo ships with no links, keys, or names. See `config.sample.js` for the
+shape of the runtime settings.
 
 ---
 
 ## Configure AI provider prompts
 
-All prompts live in `js/config.js` under `CONFIG.prompts`. Each action (reply, summarise, workorder, techservices, task, escalate) has three variants: claude, chatgpt, and copilot. Each is a function that receives the formatted email context string and returns the final prompt.
-
-Edit the prompt functions directly — no other files need to change.
+Prompt text lives in `js/config.js` under `CONFIG.prompts`. Each action (reply,
+summarise, workorder, techservices, task, escalate) has three variants: claude,
+chatgpt, and copilot. The escalate prompts use a `{{recipient}}` token that is
+filled at runtime from the Settings screen, so no real names live in the repo.
 
 ---
 
@@ -83,7 +72,7 @@ Edit the prompt functions directly — no other files need to change.
 - Google Sheets sync for tasks (replace localStorage)
 - Meeting prep briefing from contact name
 - Pipeline summary generator
-- Proposal builder with Stryker branding
+- Proposal builder
 - Salesforce quote template launcher
 
 ---
@@ -113,7 +102,7 @@ The `js/ai-adapter.js` module documents the options. Summary:
 | Option | Notes |
 |--------|-------|
 | Google Apps Script proxy | Free, fits within personal Google account, key stays server-side |
-| Power Automate HTTP flow | Fits Stryker M365 toolchain, may need IT approval |
+| Power Automate HTTP flow | Fits a Microsoft 365 toolchain, may need IT approval |
 | Cloudflare Worker | Free tier, key stored as Worker secret |
 | Ollama (local) | Runs Claude or Llama locally, works offline, zero cost |
 | Grok / xAI | Future option once API is production-ready |

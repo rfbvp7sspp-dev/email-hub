@@ -66,10 +66,12 @@ export const CONFIG = {
       copilot: ctx => `Extract all action items from this email as a numbered list. Label each with a priority of High, Medium, or Low.\n\n${ctx}`,
     },
 
+    // {{recipient}} is filled at runtime from the device-local Settings
+    // (Escalation Recipient) so no real names live in this public file.
     escalate: {
-      claude:  ctx => `/email assistant\n\nDraft an escalation to my manager Chris Waxman (Executive Territory Manager, Stryker South Pacific). Include the issue, why it needs escalation, and what I need from him.\n\n${ctx}`,
-      chatgpt: ctx => `Use email assistant skill.\n\nDraft an escalation to my manager Chris Waxman (Executive Territory Manager, Stryker South Pacific). Include the issue, why it needs escalation, and what I need from him:\n\n${ctx}`,
-      copilot: ctx => `Draft an escalation email to my manager Chris Waxman, Executive Territory Manager at Stryker South Pacific. Explain the issue from the email below, why it needs to be escalated, and what I need him to do.\n\n${ctx}`,
+      claude:  ctx => `/email assistant\n\nDraft an escalation to {{recipient}}. Include the issue, why it needs escalation, and what I need from them.\n\n${ctx}`,
+      chatgpt: ctx => `Use email assistant skill.\n\nDraft an escalation to {{recipient}}. Include the issue, why it needs escalation, and what I need from them:\n\n${ctx}`,
+      copilot: ctx => `Draft an escalation email to {{recipient}}. Explain the issue from the email below, why it needs to be escalated, and what I need them to do.\n\n${ctx}`,
     },
 
   },

@@ -19,7 +19,7 @@
 //
 //   B. Power Automate HTTP flow
 //      - HTTP trigger -> call Azure OpenAI or OpenAI connector
-//      - Fits within existing Stryker M365 toolchain
+//      - Fits within an existing Microsoft 365 toolchain
 //      - May need IT approval for external connectors
 //
 //   C. Cloudflare Worker

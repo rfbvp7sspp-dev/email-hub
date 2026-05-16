@@ -1,4 +1,5 @@
 import { CONFIG } from './config.js';
+import { getSettings } from './settings.js';
 
 /**
  * Build the standard email context block that gets appended to every prompt.
@@ -27,5 +28,6 @@ export function buildPrompt(action, email, provider) {
   const group = CONFIG.prompts[action];
   if (!group) throw new Error(`Unknown action: ${action}`);
   const fn = group[provider] || group.claude;
-  return fn(buildEmailContext(email));
+  const recipient = getSettings().escalationRecipient || 'my manager';
+  return fn(buildEmailContext(email)).replace(/\{\{recipient\}\}/g, recipient);
 }

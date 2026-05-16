@@ -526,6 +526,23 @@ input[type="file"] {
   border-radius: 10px;
 }
 
+/* ── DATA CLEAR BUTTON ── */
+.data-clear-btn {
+  width: 100%;
+  padding: 12px 14px;
+  background: rgba(255,69,58,0.1);
+  border: 1px solid rgba(255,69,58,0.3);
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #FF453A;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  min-height: 44px;
+  transition: background 0.15s;
+}
+.data-clear-btn:active { background: rgba(255,69,58,0.18); }
+
 /* ── TODAY VIEW ── */
 
 .debrief-cta {
