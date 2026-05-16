@@ -1,4 +1,4 @@
-// Local storage adapter for recents and tasks.
+// Local storage adapter for recents, tasks, and debriefs.
 // No imports — this module has no dependencies.
 //
 // Future: replace localStorage calls here with a Google Sheets adapter.
@@ -9,10 +9,14 @@
 //   loadTasks    -> getRows(TASKS_SHEET)
 //   updateTask   -> updateRow(TASKS_SHEET, id, changes)
 //   deleteTask   -> deleteRow(TASKS_SHEET, id)
+//   saveDebrief  -> appendRow(DEBRIEFS_SHEET, debrief)
+//   loadDebriefs -> getRows(DEBRIEFS_SHEET)
 
-const RECENTS_KEY = 'jphub_recents';
-const TASKS_KEY   = 'jphub_tasks';
-const MAX_RECENTS = 10;
+const RECENTS_KEY  = 'jphub_recents';
+const TASKS_KEY    = 'jphub_tasks';
+const DEBRIEFS_KEY = 'jphub_debriefs';
+const MAX_RECENTS  = 10;
+const MAX_DEBRIEFS = 100;
 
 // ── RECENTS ──
 
@@ -68,4 +72,36 @@ function _writeTasks(tasks) {
   } catch {
     // Storage full — silently skip.
   }
+}
+
+// ── DEBRIEFS ──
+
+export function saveDebrief(debrief) {
+  const list = loadDebriefs();
+  list.unshift(debrief);
+  try {
+    localStorage.setItem(DEBRIEFS_KEY, JSON.stringify(list.slice(0, MAX_DEBRIEFS)));
+  } catch {}
+}
+
+export function loadDebriefs() {
+  try {
+    return JSON.parse(localStorage.getItem(DEBRIEFS_KEY) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+export function deleteDebrief(id) {
+  try {
+    localStorage.setItem(DEBRIEFS_KEY, JSON.stringify(loadDebriefs().filter(d => d.id !== id)));
+  } catch {}
+}
+
+export function getRecentHospitals() {
+  const seen = new Set();
+  return loadDebriefs()
+    .map(d => d.hospital)
+    .filter(h => h && !seen.has(h) && seen.add(h))
+    .slice(0, 15);
 }

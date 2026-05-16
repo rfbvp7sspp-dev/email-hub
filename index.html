@@ -15,29 +15,124 @@
 <body>
 
 <!-- ══════════════════════════════════════════════
-     INBOX VIEW
+     TODAY VIEW  (default landing)
 ══════════════════════════════════════════════ -->
-<div class="view active" id="inboxView">
+<div class="view active" id="todayView">
 
   <header class="app-header">
     <div class="header-badge">
-      <!-- envelope icon -->
+      <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+        <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+        <line x1="3" y1="10" x2="21" y2="10"/>
+      </svg>
+    </div>
+    <div class="header-titles">
+      <div class="header-title">JP Hub</div>
+      <div class="header-sub" id="todayDate"></div>
+    </div>
+    <div class="header-clock" id="appClock"></div>
+  </header>
+
+  <div class="scroll">
+
+    <!-- New Debrief CTA -->
+    <button class="debrief-cta" onclick="openDebrief()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14M5 12h14"/>
+      </svg>
+      New Debrief
+    </button>
+
+    <!-- Open Tasks -->
+    <div class="today-section">
+      <div class="today-section-header">
+        <div class="section-label">Tasks</div>
+        <div class="task-count" id="todayTaskCount"></div>
+        <button class="today-see-all" onclick="window.goTasks()">See all</button>
+      </div>
+      <div id="todayTaskList"></div>
+    </div>
+
+    <!-- Recent Debriefs -->
+    <div class="today-section">
+      <div class="today-section-header">
+        <div class="section-label">Recent Debriefs</div>
+        <button class="today-see-all" onclick="openDebrief()">+ New</button>
+      </div>
+      <div id="todayDebriefList"></div>
+    </div>
+
+    <!-- Recent Emails -->
+    <div class="today-section">
+      <div class="today-section-header">
+        <div class="section-label">Recent Emails</div>
+        <button class="today-see-all" onclick="window.goInbox()">See all</button>
+      </div>
+      <div id="todayEmailList"></div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="today-section">
+      <div class="section-label" style="margin-bottom:8px">Quick Actions</div>
+      <div class="qa-grid">
+        <div class="pick-wrap">
+          <button class="qa-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+              <polyline points="22,6 12,13 2,6"/>
+            </svg>
+            Open Email
+          </button>
+          <input type="file" accept=".json,application/json,text/plain,*/*" id="filePicker">
+        </div>
+        <button class="qa-btn" onclick="openOneDrive()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 15a4 4 0 0 0 4 4h9a5 5 0 0 0 1.82-9.65A7 7 0 0 0 3.36 12 4 4 0 0 0 3 15z"/>
+          </svg>
+          OneDrive
+        </button>
+        <button class="qa-btn" onclick="openOutlookLink()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+            <polyline points="22,6 12,13 2,6"/>
+          </svg>
+          Outlook
+        </button>
+        <button class="qa-btn" onclick="window.goTasks()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="9 11 12 14 22 4"/>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+          </svg>
+          Tasks
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     INBOX VIEW
+══════════════════════════════════════════════ -->
+<div class="view" id="inboxView">
+
+  <header class="app-header">
+    <div class="header-badge">
       <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
         <polyline points="22,6 12,13 2,6"/>
       </svg>
     </div>
     <div class="header-titles">
-      <div class="header-title">JP Hub</div>
-      <div class="header-sub">AI Workflow Controller</div>
+      <div class="header-title">Inbox</div>
     </div>
-    <div class="header-clock" id="appClock"></div>
   </header>
 
   <nav class="quick-nav">
     <div class="pick-wrap">
       <button class="quick-btn">&#128193; Open Email</button>
-      <input type="file" accept=".json,application/json,text/plain,*/*" id="filePicker">
+      <input type="file" accept=".json,application/json,text/plain,*/*" id="filePickerInbox">
     </div>
     <button class="quick-btn" onclick="openOneDrive()">OneDrive</button>
     <button class="quick-btn" onclick="openOutlookLink()">Outlook</button>
@@ -45,13 +140,11 @@
 
   <div class="scroll">
 
-    <!-- Recents -->
     <div id="recentSection" style="display:none; flex-direction:column; gap:12px;">
       <div class="section-label">Recent</div>
       <div id="recentList"></div>
     </div>
 
-    <!-- Empty state -->
     <div class="empty-state" id="emptyState">
       <div class="empty-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
@@ -63,7 +156,6 @@
       <div class="empty-desc">Tap "Open Email" above to load an email JSON file from your OneDrive Pending Emails folder.</div>
     </div>
 
-    <!-- Paste fallback -->
     <details class="paste-details">
       <summary class="paste-summary">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -106,7 +198,6 @@
 
   <header class="app-header">
     <div class="header-badge">
-      <!-- checklist icon -->
       <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="9 11 12 14 22 4"/>
         <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
@@ -128,10 +219,97 @@
 </div>
 
 <!-- ══════════════════════════════════════════════
+     SEARCH VIEW
+══════════════════════════════════════════════ -->
+<div class="view" id="searchView">
+
+  <header class="app-header" style="gap:10px">
+    <div class="search-bar-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input
+        id="searchInput"
+        class="search-bar-input"
+        type="search"
+        placeholder="Search tasks, emails, debriefs..."
+        oninput="runSearch(this.value)"
+        autocomplete="off"
+        autocorrect="off"
+        spellcheck="false"
+      >
+    </div>
+  </header>
+
+  <div class="scroll" id="searchResults">
+    <div class="search-hint">Search tasks, emails, and debriefs</div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════
+     DEBRIEF MODAL
+══════════════════════════════════════════════ -->
+<div class="modal-backdrop" id="debriefModal" onclick="if(event.target===this)closeDebrief()">
+  <div class="modal-sheet">
+
+    <div class="modal-header">
+      <div class="modal-title">New Debrief</div>
+      <button class="modal-close" onclick="closeDebrief()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+
+    <div class="modal-body">
+
+      <div class="field-group">
+        <label class="field-label">Hospital / Site</label>
+        <input
+          id="debriefHospital"
+          class="field-input"
+          type="text"
+          placeholder="e.g. Royal North Shore"
+          list="hospitalSuggestions"
+          autocomplete="off"
+        >
+        <datalist id="hospitalSuggestions"></datalist>
+      </div>
+
+      <div class="field-group">
+        <label class="field-label">Notes</label>
+        <textarea
+          id="debriefNotes"
+          class="field-textarea"
+          placeholder="Brain dump — what happened, follow-ups, impressions..."
+          rows="5"
+        ></textarea>
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button class="modal-cancel" onclick="closeDebrief()">Cancel</button>
+      <button class="modal-submit" onclick="submitDebrief()">Save Debrief</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
      TAB BAR
 ══════════════════════════════════════════════ -->
 <nav class="tab-bar">
-  <button class="tab active" id="tab-inbox" onclick="goInbox()">
+  <button class="tab active" id="tab-today" onclick="goToday()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+      <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
+      <line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+    Today
+  </button>
+  <button class="tab" id="tab-inbox" onclick="goInbox()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
       <polyline points="22,6 12,13 2,6"/>
@@ -144,6 +322,12 @@
       <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
     </svg>
     Tasks
+  </button>
+  <button class="tab" id="tab-search" onclick="openSearch()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    Search
   </button>
 </nav>
 

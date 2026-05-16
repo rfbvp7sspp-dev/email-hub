@@ -1,10 +1,12 @@
 import { CONFIG }                          from './config.js';
-import { saveRecent, getRecents, saveTask as _saveTask } from './storage.js';
+import { saveRecent, getRecents, saveTask as _saveTask, loadTasks } from './storage.js';
 import { parseEmailFile }                  from './email-reader.js';
 import { buildPrompt }                     from './prompt-builder.js';
 import { copyAndOpen }                      from './providers.js';
 import { showToast, startClock, showView, esc, initials, fmtTime } from './ui.js';
 import { createTask, addTaskFromEmail, renderTasks, initTaskHandlers, exportTaskToClipboard } from './tasks.js';
+import { renderDebriefList, initDebriefHandlers } from './debrief.js';
+import { initSearch }                      from './search.js';
 
 // ── APP STATE ──
 let currentEmail = null;
@@ -14,30 +16,90 @@ let bodyExpanded = false;
 (function init() {
   startClock('appClock');
   initTaskHandlers();
+  initDebriefHandlers();
+  initSearch();
   _bindFilePicker();
-  renderRecents();
-  showView('inboxView');
+  window._renderToday = renderToday;
+  renderToday();
+  showView('todayView');
 })();
+
+// ── TODAY VIEW ──
+
+function renderToday() {
+  const d = new Date();
+  const dateEl = document.getElementById('todayDate');
+  if (dateEl) {
+    dateEl.textContent = d.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+  }
+
+  // Open tasks
+  const tasks = loadTasks().filter(t => t.status !== 'done');
+  const countEl = document.getElementById('todayTaskCount');
+  const taskListEl = document.getElementById('todayTaskList');
+
+  if (countEl) {
+    countEl.textContent = tasks.length
+      ? `${tasks.length} open task${tasks.length !== 1 ? 's' : ''}`
+      : 'All done';
+  }
+
+  if (taskListEl) {
+    taskListEl.innerHTML = tasks.slice(0, 3).map(t => `
+      <div class="today-row" onclick="window.goTasks()">
+        <div class="today-row-dot" style="background:${_statusColour(t.status)}"></div>
+        <div class="today-row-text">${esc(t.title)}</div>
+        <div class="today-row-badge">${_statusLabel(t.status)}</div>
+      </div>`).join('') || `<div class="empty-hint">No open tasks</div>`;
+  }
+
+  // Recent debriefs
+  renderDebriefList('todayDebriefList', 3);
+
+  // Recent emails
+  const emails = getRecents().slice(0, 3);
+  const emailListEl = document.getElementById('todayEmailList');
+  if (emailListEl) {
+    emailListEl.innerHTML = emails.length
+      ? emails.map(e => `
+          <div class="today-row" onclick="window.goInbox()">
+            <div class="today-row-dot" style="background:var(--gold)"></div>
+            <div class="today-row-text">${esc(e.subject)}</div>
+            <div class="today-row-sub">${esc(e.sender)}</div>
+          </div>`).join('')
+      : `<div class="empty-hint">No recent emails</div>`;
+  }
+}
+
+function _statusColour(s) {
+  return { todo: '#636366', 'in-progress': '#0A84FF', waiting: '#FF9F0A', done: '#30D158' }[s] || '#636366';
+}
+
+function _statusLabel(s) {
+  return { todo: 'To Do', 'in-progress': 'In Progress', waiting: 'Waiting', done: 'Done' }[s] || s;
+}
 
 // ── FILE PICKER ──
 function _bindFilePicker() {
-  const picker = document.getElementById('filePicker');
-  if (!picker) return;
-  picker.addEventListener('change', function (e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      try {
-        _loadEmailText(ev.target.result, file.name);
-      } catch (err) {
-        alert('Read error: ' + err.message);
-      }
-    };
-    reader.onerror = () =>
-      alert('FileReader failed — try the Paste fallback below instead.');
-    reader.readAsText(file, 'UTF-8');
-    this.value = ''; // allow re-selecting the same file
+  ['filePicker', 'filePickerInbox'].forEach(id => {
+    const picker = document.getElementById(id);
+    if (!picker) return;
+    picker.addEventListener('change', function (e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => {
+        try {
+          _loadEmailText(ev.target.result, file.name);
+        } catch (err) {
+          alert('Read error: ' + err.message);
+        }
+      };
+      reader.onerror = () =>
+        alert('FileReader failed — try the Paste fallback below instead.');
+      reader.readAsText(file, 'UTF-8');
+      this.value = '';
+    });
   });
 }
 
@@ -48,6 +110,11 @@ function _loadEmailText(text, filename) {
 }
 
 // ── NAVIGATION ──
+
+window.goToday = function () {
+  showView('todayView');
+  renderToday();
+};
 
 window.goInbox = function () {
   showView('inboxView');

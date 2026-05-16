@@ -41,23 +41,24 @@ export function startClock(id) {
 
 // ── VIEW SWITCHER ──
 
-const VIEW_IDS = ['inboxView', 'emailView', 'tasksView'];
+const VIEW_IDS = ['todayView', 'inboxView', 'emailView', 'tasksView', 'searchView'];
 
-/**
- * Switch to a named view. Hides all others and updates tab-bar active state.
- * @param {string} viewId - One of: inboxView, emailView, tasksView.
- */
+const TAB_MAP = {
+  todayView:  'tab-today',
+  inboxView:  'tab-inbox',
+  tasksView:  'tab-tasks',
+  searchView: 'tab-search',
+};
+
 export function showView(viewId) {
   VIEW_IDS.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle('active', id === viewId);
   });
 
-  // Update tab-bar active highlights.
-  const tabInbox = document.getElementById('tab-inbox');
-  const tabTasks = document.getElementById('tab-tasks');
-  if (tabInbox) tabInbox.classList.toggle('active', viewId === 'inboxView');
-  if (tabTasks) tabTasks.classList.toggle('active', viewId === 'tasksView');
+  Object.entries(TAB_MAP).forEach(([view, tabId]) => {
+    document.getElementById(tabId)?.classList.toggle('active', view === viewId);
+  });
 }
 
 // ── UTILS ──
