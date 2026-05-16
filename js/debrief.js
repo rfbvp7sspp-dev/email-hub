@@ -44,12 +44,56 @@ export function submitDebrief() {
   }
 
   saveDebrief(createDebrief({ hospital, notes }));
+  _exportDebriefJSON(hospital, notes);
   closeDebriefModal();
-  showToast('&#10003;', 'Debrief saved');
+  showToast('&#10003;', 'Debrief saved + JSON exported');
 
   if (document.getElementById('todayView')?.classList.contains('active')) {
     window._renderToday?.();
   }
+}
+
+// ── JSON EXPORT ──
+// Builds a TerritoryOS debrief record and downloads it. Drop the file into
+// your private OneDrive TerritoryOS/inbox/ folder — Power Automate picks it
+// up from there. The frontend never touches OneDrive directly.
+
+function _slugify(s) {
+  return String(s || '').toLowerCase().trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'no-hospital';
+}
+
+export function buildDebriefRecord(hospital, notes) {
+  const now      = new Date().toISOString();
+  const datePart = now.slice(0, 10);
+  const slug     = _slugify(hospital);
+  return {
+    id:            `deb_${datePart}_${slug}`,
+    type:          'debrief',
+    schemaVersion: 1,
+    createdAt:     now,
+    updatedAt:     now,
+    data: {
+      hospital:     hospital || '',
+      hospitalSlug: slug,
+      notes:        notes || '',
+    },
+  };
+}
+
+function _exportDebriefJSON(hospital, notes) {
+  const record   = buildDebriefRecord(hospital, notes);
+  const filename = `${record.createdAt.slice(0, 10)}-${record.data.hospitalSlug}.json`;
+  const blob = new Blob([JSON.stringify(record, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export function renderDebriefList(containerId, limit = null) {

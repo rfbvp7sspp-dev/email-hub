@@ -1,0 +1,9 @@
+# Local runtime config — never commit real endpoints, keys, or links.
+config.local.js
+js/config.local.js
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+*.log

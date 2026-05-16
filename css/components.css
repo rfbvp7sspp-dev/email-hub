@@ -496,6 +496,36 @@ input[type="file"] {
   transform: translateX(-50%) translateY(0);
 }
 
+/* ── HEADER ICON BUTTON ── */
+.header-icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  color: var(--text2);
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+.header-icon-btn:active { background: var(--surface2); }
+.header-icon-btn svg { width: 16px; height: 16px; }
+
+/* ── SETTINGS NOTE ── */
+.settings-note {
+  font-size: 12px;
+  color: var(--text3);
+  line-height: 1.5;
+  padding: 10px 12px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
 /* ── TODAY VIEW ── */
 
 .debrief-cta {

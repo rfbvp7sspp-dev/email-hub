@@ -7,6 +7,7 @@ import { showToast, startClock, showView, esc, initials, fmtTime } from './ui.js
 import { createTask, addTaskFromEmail, renderTasks, initTaskHandlers, exportTaskToClipboard } from './tasks.js';
 import { renderDebriefList, initDebriefHandlers } from './debrief.js';
 import { initSearch }                      from './search.js';
+import { initSettingsHandlers, getSettings } from './settings.js';
 
 // ── APP STATE ──
 let currentEmail = null;
@@ -18,6 +19,7 @@ let bodyExpanded = false;
   initTaskHandlers();
   initDebriefHandlers();
   initSearch();
+  initSettingsHandlers();
   _bindFilePicker();
   window._renderToday = renderToday;
   renderToday();
@@ -127,9 +129,9 @@ window.goTasks = function () {
 };
 
 window.openOneDrive = function () {
-  const url = CONFIG.links.oneDrive;
+  const url = getSettings().oneDriveLink || CONFIG.links.oneDrive;
   if (url) window.open(url, '_blank');
-  else showToast('&#9432;', 'OneDrive link not configured — edit js/config.js');
+  else showToast('&#9432;', 'Add your OneDrive link in Settings');
 };
 
 window.openOutlookLink = function () {
@@ -144,7 +146,7 @@ window.openOutlookLink = function () {
   setTimeout(() => {
     document.removeEventListener('visibilitychange', onHide);
     if (!appOpened && tab && !tab.closed) {
-      tab.location.href = CONFIG.links.outlook || 'https://outlook.office.com';
+      tab.location.href = getSettings().outlookLink || CONFIG.links.outlook || 'https://outlook.office.com';
     }
   }, 1500);
 };
