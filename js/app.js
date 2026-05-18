@@ -101,6 +101,14 @@ function _statusLabel(s) {
   return { todo: 'To Do', 'in-progress': 'In Progress', waiting: 'Waiting', done: 'Done' }[s] || s;
 }
 
+function _triageColour(s) {
+  return { actionable: '#30D158', review: '#FF9F0A', archived: '#636366', new: '#8E8E93' }[s] || '#8E8E93';
+}
+
+function _triageLabel(s) {
+  return { actionable: 'Actionable', review: 'Review', archived: 'Archived', new: 'New' }[s] || s || 'New';
+}
+
 // ── FILE PICKER ──
 function _bindFilePicker() {
   ['filePicker', 'filePickerInbox'].forEach(id => {
@@ -207,14 +215,18 @@ function renderRecents() {
     const row = document.createElement('div');
     row.className = 'email-row';
     row.style.animationDelay = `${i * 0.04}s`;
+    const triageColor = _triageColour(email.triageStatus);
+    const triageLabel = _triageLabel(email.triageStatus);
     row.innerHTML = `
       <div class="row-avatar">${initials(email.sender)}</div>
       <div class="row-info">
         <div class="row-sender">${esc(email.sender)}</div>
         <div class="row-subject">${esc(email.subject)}</div>
+        ${email.hospitalId ? `<div class="row-hospital">${esc(email.hospitalId)}</div>` : ''}
       </div>
       <div class="row-right">
         <div class="row-time">${fmtTime(email.time || email.loadedAt)}</div>
+        <div class="row-triage" title="${triageLabel}" style="background:${triageColor}"></div>
         <div class="row-chev">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <polyline points="9 18 15 12 9 6"/>
@@ -275,9 +287,21 @@ function renderEmailView() {
       </div>
     </div>`).join('');
 
+  const contextPills = [
+    e.triageStatus && e.triageStatus !== 'new'
+      ? `<span class="ctx-pill" style="background:${_triageColour(e.triageStatus)}20;color:${_triageColour(e.triageStatus)};border-color:${_triageColour(e.triageStatus)}40">${_triageLabel(e.triageStatus)}</span>`
+      : '',
+    e.hospitalId
+      ? `<span class="ctx-pill ctx-pill-hospital">${esc(e.hospitalId)}</span>`
+      : '',
+    e.triageMatched
+      ? `<span class="ctx-pill ctx-pill-match" title="Matched on: ${esc(e.triageMatched)}">${esc(e.triageMatched)}</span>`
+      : '',
+  ].filter(Boolean).join('');
+
   scrollEl.innerHTML = `
     <div class="email-card">
-      <div class="card-strip"></div>
+      <div class="card-strip" style="background:${_triageColour(e.triageStatus)}"></div>
       <div class="card-meta">
         <div class="sender-row">
           <div class="avatar">${initials(e.sender)}</div>
@@ -287,6 +311,7 @@ function renderEmailView() {
           </div>
           <div class="email-time">${fmtTime(e.time)}</div>
         </div>
+        ${contextPills ? `<div class="ctx-pills-row">${contextPills}</div>` : ''}
         <div class="email-subject">${esc(e.subject)}</div>
       </div>
       <div class="card-body" id="cardBody">${
