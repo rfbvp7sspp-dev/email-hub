@@ -22,9 +22,29 @@ let bodyExpanded = false;
   initSettingsHandlers();
   _bindFilePicker();
   window._renderToday = renderToday;
-  renderToday();
-  showView('todayView');
+  _routeFromHash();
+  window.addEventListener('hashchange', _routeFromHash);
 })();
+
+// ── HASH ROUTING (deep-link support for Power Automate notifications) ──
+
+function _routeFromHash() {
+  const hash = window.location.hash.replace(/^#\/?/, '').split('?')[0].toLowerCase();
+  if (hash === 'inbox') {
+    showView('inboxView');
+    renderRecents();
+  } else if (hash === 'tasks') {
+    showView('tasksView');
+    renderTasks();
+  } else {
+    // default: today view (also handles #today or no hash)
+    renderToday();
+    showView('todayView');
+  }
+  if (hash && window.history.replaceState) {
+    window.history.replaceState(null, '', window.location.pathname);
+  }
+}
 
 // ── TODAY VIEW ──
 

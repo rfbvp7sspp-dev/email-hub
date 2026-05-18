@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JP Hub</title>
+  <script>
+    // GitHub Pages SPA redirect.
+    // When Pages can't find a file it serves this 404.html.
+    // We encode the intended path as a hash so index.html can read it on load.
+    (function () {
+      var base  = '/email-hub/';
+      var full  = window.location.href;
+      var path  = window.location.pathname.replace(base, '').replace(/^\//, '');
+      var query = window.location.search;  // preserve ?params if any
+      var hash  = path ? ('#' + path + query) : (query ? ('#' + query.slice(1)) : '');
+      window.location.replace(
+        window.location.origin + base + hash
+      );
+    })();
+  </script>
+</head>
+<body></body>
+</html>
