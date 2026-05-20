@@ -214,7 +214,7 @@ window.runCompose = function (provider) {
 
 window.sendComposeToFlow = async function () {
   try {
-    const draft = _readComposeForm();
+    const draft = _readComposeForm({ requireFlowFields: true });
     const prompt = _buildComposePrompt(draft, 'claude');
     await sendHubCommand({
       type: 'create_email',
@@ -228,7 +228,7 @@ window.sendComposeToFlow = async function () {
   }
 };
 
-function _readComposeForm() {
+function _readComposeFormWithOptions(opts) {
   const draft = {
     requestId: `hub-compose-${Date.now()}`,
     createdAt: new Date().toISOString(),
@@ -236,8 +236,8 @@ function _readComposeForm() {
     cc: _fieldValue('composeCc'),
     bcc: '',
     subject: _fieldValue('composeSubject'),
-    intent: _fieldValue('composeIntent'),
-    tone: _fieldValue('composeTone') || 'warm and direct',
+    intent: '',
+    tone: '',
     bodyText: _fieldValue('composeBody'),
     bodyHtml: '',
     attachments: [],
@@ -246,11 +246,25 @@ function _readComposeForm() {
   draft.approvedByUser = Boolean(draft.to && draft.subject && draft.bodyText);
   draft.draftStatus = draft.bodyText ? 'ready_for_outlook_draft' : 'needs_ai_draft';
 
-  if (!draft.to && !draft.subject && !draft.intent && !draft.bodyText) {
-    throw new Error('Add a recipient, subject, notes, or draft body first.');
+  if (!draft.bodyText) {
+    throw new Error('Add an email body first.');
+  }
+
+  if (opts.requireFlowFields) {
+    const missing = [];
+    if (!draft.to) missing.push('To');
+    if (!draft.subject) missing.push('Subject');
+    if (!draft.bodyText) missing.push('Body');
+    if (missing.length) {
+      throw new Error(`Required for Flow: ${missing.join(', ')}`);
+    }
   }
 
   return draft;
+}
+
+function _readComposeForm(options) {
+  return _readComposeFormWithOptions(options || {});
 }
 
 function _fieldValue(id) {
@@ -264,32 +278,19 @@ function _buildComposePrompt(draft, provider) {
       ? 'Use email assistant skill. Draft a professional outreach email.'
       : '/email assistant\n\nDraft a professional outreach email.';
 
-  const bodyInstruction = draft.bodyText
-    ? 'I have written a rough draft. Improve it, keep the intent, and return a polished subject and body.'
-    : 'Use my notes to write the email from scratch. Return a polished subject and body.';
-
-  return `${appHint}
-
-${bodyInstruction}
-
-Tone: ${draft.tone}
-To: ${draft.to || '(not specified yet)'}
-Cc: ${draft.cc || '(none)'}
-Subject / topic: ${draft.subject || '(suggest one)'}
-
-Notes:
-${draft.intent || '(none)'}
-
-Rough draft:
-${draft.bodyText || '(none)'}
-
-Constraints:
+  const parts = [appHint, '', 'Use my draft or notes below to write a polished outreach email.'];
+  if (draft.to) parts.push('', `To: ${draft.to}`);
+  if (draft.cc) parts.push(`Cc: ${draft.cc}`);
+  if (draft.subject) parts.push(`Subject: ${draft.subject}`);
+  parts.push('', 'Body:', draft.bodyText);
+  parts.push('', `Constraints:
 - Keep it concise and easy to send from Outlook.
 - Do not invent commitments, pricing, dates, attachments, or clinical details.
 - Sign off with "Kind regards," only.
 - Output in this format:
 Subject:
-Body:`;
+Body:`);
+  return parts.join('\n');
 }
 
 window.loadPasted = function () {

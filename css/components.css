@@ -869,6 +869,9 @@ input[type="file"] {
   text-transform: uppercase;
   color: var(--text3);
 }
+.required-star {
+  color: #FF453A;
+}
 .field-input {
   padding: 12px 14px;
   background: var(--surface2);

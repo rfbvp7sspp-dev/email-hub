@@ -239,39 +239,23 @@
   <div class="scroll">
     <div class="compose-panel">
       <div class="field-group">
-        <label class="field-label">To</label>
+        <label class="field-label">To <span class="required-star">*</span></label>
         <input id="composeTo" class="field-input" type="text" placeholder="Name or email address" autocomplete="off">
       </div>
 
-      <div class="compose-row">
-        <div class="field-group">
-          <label class="field-label">Cc</label>
-          <input id="composeCc" class="field-input" type="text" placeholder="Optional" autocomplete="off">
-        </div>
-        <div class="field-group">
-          <label class="field-label">Tone</label>
-          <select id="composeTone" class="field-input">
-            <option value="warm and direct">Warm</option>
-            <option value="concise and professional">Concise</option>
-            <option value="polished and senior">Polished</option>
-            <option value="friendly and casual">Friendly</option>
-          </select>
-        </div>
+      <div class="field-group">
+        <label class="field-label">Cc</label>
+        <input id="composeCc" class="field-input" type="text" placeholder="Optional" autocomplete="off">
       </div>
 
       <div class="field-group">
-        <label class="field-label">Subject</label>
+        <label class="field-label">Subject <span class="required-star">*</span></label>
         <input id="composeSubject" class="field-input" type="text" placeholder="Subject or rough topic" autocomplete="off">
       </div>
 
       <div class="field-group">
-        <label class="field-label">What should it say?</label>
-        <textarea id="composeIntent" class="field-textarea compose-textarea" placeholder="Short notes are fine. Example: Ask RBWH whether they have confirmed the trial date, offer Tuesday or Thursday, mention I can bring the 1788 settings guide." rows="5"></textarea>
-      </div>
-
-      <div class="field-group">
-        <label class="field-label">Draft body, if already written</label>
-        <textarea id="composeBody" class="field-textarea compose-textarea" placeholder="Optional. If this is filled in, Flow can queue it as a ready Outlook draft." rows="7"></textarea>
+        <label class="field-label">Body <span class="required-star">*</span></label>
+        <textarea id="composeBody" class="field-textarea compose-textarea" placeholder="Write the email body or rough notes here." rows="9"></textarea>
       </div>
     </div>
 
