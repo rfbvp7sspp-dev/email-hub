@@ -583,6 +583,27 @@ input[type="file"] {
 }
 .debrief-cta:active { opacity: 0.85; transform: scale(0.98); }
 
+.compose-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px 18px;
+  min-height: 50px;
+  background: rgba(10,132,255,0.14);
+  border: 1px solid rgba(10,132,255,0.32);
+  border-radius: 16px;
+  color: #64D2FF;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s, transform 0.1s;
+}
+.compose-cta:active { opacity: 0.85; transform: scale(0.98); }
+
 .today-section {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -688,6 +709,49 @@ input[type="file"] {
 }
 .qa-btn:active { background: rgba(255,255,255,0.06); transform: scale(0.97); }
 .qa-btn svg { flex-shrink: 0; color: var(--text3); }
+
+/* ── COMPOSE VIEW ── */
+.compose-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.compose-row {
+  display: grid;
+  grid-template-columns: 1fr 150px;
+  gap: 10px;
+}
+
+.compose-textarea {
+  min-height: 112px;
+}
+
+.compose-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.compose-pills {
+  padding: 0 2px;
+}
+
+.pill-flow {
+  border-color: rgba(255,159,10,0.35);
+  color: #FF9F0A;
+  background: rgba(255,159,10,0.08);
+}
+
+@media (max-width: 420px) {
+  .compose-row {
+    grid-template-columns: 1fr;
+  }
+}
 
 /* ── DEBRIEF CARDS (today / modal) ── */
 .debrief-card {

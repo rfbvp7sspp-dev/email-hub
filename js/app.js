@@ -3,6 +3,7 @@ import { saveRecent, getRecents, saveTask as _saveTask, loadTasks } from './stor
 import { parseEmailFile }                  from './email-reader.js';
 import { buildPrompt }                     from './prompt-builder.js';
 import { copyAndOpen }                      from './providers.js';
+import { sendHubCommand }                   from './ai-adapter.js';
 import { showToast, startClock, showView, esc, initials, fmtTime } from './ui.js';
 import { createTask, addTaskFromEmail, renderTasks, initTaskHandlers, exportTaskToClipboard } from './tasks.js';
 import { renderDebriefList, initDebriefHandlers } from './debrief.js';
@@ -36,6 +37,8 @@ function _routeFromHash() {
   } else if (hash === 'tasks') {
     showView('tasksView');
     renderTasks();
+  } else if (hash === 'compose') {
+    showView('composeView');
   } else {
     // default: today view (also handles #today or no hash)
     renderToday();
@@ -156,6 +159,11 @@ window.goTasks = function () {
   renderTasks();
 };
 
+window.goCompose = function () {
+  showView('composeView');
+  setTimeout(() => document.getElementById('composeTo')?.focus(), 50);
+};
+
 window.openOneDrive = function () {
   const url = getSettings().oneDriveLink || CONFIG.links.oneDrive;
   if (url) window.open(url, '_blank');
@@ -179,7 +187,110 @@ window.openOutlookLink = function () {
   }, 1500);
 };
 
+window.syncInbox = async function () {
+  try {
+    showToast('...', 'Asking Power Automate for latest emails');
+    const result = await sendHubCommand({ type: 'sync_inbox', limit: 10 }, { expectResponse: true });
+    const emails = Array.isArray(result.emails) ? result.emails : [];
+    emails.forEach(saveRecent);
+    renderToday();
+    showToast('✓', emails.length ? `Synced ${emails.length} email${emails.length === 1 ? '' : 's'}` : 'No new emails returned');
+  } catch (err) {
+    showToast('⚠', err.message || 'Inbox sync failed');
+  }
+};
+
 // ── PASTE FALLBACK ──
+
+window.runCompose = function (provider) {
+  try {
+    const draft = _readComposeForm();
+    const prompt = _buildComposePrompt(draft, provider);
+    copyAndOpen(prompt, provider);
+  } catch (err) {
+    showToast('&#9888;', err.message);
+  }
+};
+
+window.sendComposeToFlow = async function () {
+  try {
+    const draft = _readComposeForm();
+    const prompt = _buildComposePrompt(draft, 'claude');
+    await sendHubCommand({
+      type: 'create_email',
+      requestedAgent: 'email-composer',
+      prompt,
+      draft,
+    });
+    showToast('✓', draft.bodyText ? 'Draft sent to Flow' : 'Compose request sent to Flow');
+  } catch (err) {
+    showToast('⚠', err.message || 'Compose flow failed');
+  }
+};
+
+function _readComposeForm() {
+  const draft = {
+    requestId: `hub-compose-${Date.now()}`,
+    createdAt: new Date().toISOString(),
+    to: _fieldValue('composeTo'),
+    cc: _fieldValue('composeCc'),
+    bcc: '',
+    subject: _fieldValue('composeSubject'),
+    intent: _fieldValue('composeIntent'),
+    tone: _fieldValue('composeTone') || 'warm and direct',
+    bodyText: _fieldValue('composeBody'),
+    bodyHtml: '',
+    attachments: [],
+  };
+
+  draft.approvedByUser = Boolean(draft.to && draft.subject && draft.bodyText);
+  draft.draftStatus = draft.bodyText ? 'ready_for_outlook_draft' : 'needs_ai_draft';
+
+  if (!draft.to && !draft.subject && !draft.intent && !draft.bodyText) {
+    throw new Error('Add a recipient, subject, notes, or draft body first.');
+  }
+
+  return draft;
+}
+
+function _fieldValue(id) {
+  return (document.getElementById(id)?.value || '').trim();
+}
+
+function _buildComposePrompt(draft, provider) {
+  const appHint = provider === 'copilot'
+    ? 'Draft a professional email.'
+    : provider === 'chatgpt'
+      ? 'Use email assistant skill. Draft a professional outreach email.'
+      : '/email assistant\n\nDraft a professional outreach email.';
+
+  const bodyInstruction = draft.bodyText
+    ? 'I have written a rough draft. Improve it, keep the intent, and return a polished subject and body.'
+    : 'Use my notes to write the email from scratch. Return a polished subject and body.';
+
+  return `${appHint}
+
+${bodyInstruction}
+
+Tone: ${draft.tone}
+To: ${draft.to || '(not specified yet)'}
+Cc: ${draft.cc || '(none)'}
+Subject / topic: ${draft.subject || '(suggest one)'}
+
+Notes:
+${draft.intent || '(none)'}
+
+Rough draft:
+${draft.bodyText || '(none)'}
+
+Constraints:
+- Keep it concise and easy to send from Outlook.
+- Do not invent commitments, pricing, dates, attachments, or clinical details.
+- Sign off with "Kind regards," only.
+- Output in this format:
+Subject:
+Body:`;
+}
 
 window.loadPasted = function () {
   const text = (document.getElementById('pasteInput') || {}).value || '';
@@ -284,6 +395,7 @@ function renderEmailView() {
         <button class="pill pill-claude"  onclick="window.runAction('${a.key}','claude')">Claude</button>
         <button class="pill pill-chatgpt" onclick="window.runAction('${a.key}','chatgpt')">ChatGPT</button>
         <button class="pill pill-copilot" onclick="window.runAction('${a.key}','copilot')">Copilot</button>
+        <button class="pill pill-flow"    onclick="window.runFlowAction('${a.key}')">Flow</button>
       </div>
     </div>`).join('');
 
@@ -353,6 +465,34 @@ window.runAction = function (action, provider) {
     showToast('&#9888;', err.message);
   }
 };
+
+window.runFlowAction = async function (action) {
+  if (!currentEmail) return;
+  try {
+    const prompt = buildPrompt(action, currentEmail, 'claude');
+    await sendHubCommand({
+      type: 'agent_action',
+      action,
+      requestedAgent: _agentForAction(action),
+      prompt,
+      email: currentEmail,
+    });
+    showToast('✓', 'Sent to Power Automate');
+  } catch (err) {
+    showToast('⚠', err.message || 'Flow command failed');
+  }
+};
+
+function _agentForAction(action) {
+  return {
+    reply: 'email-triage',
+    summarise: 'email-triage',
+    workorder: 'tech-services-ops',
+    techservices: 'tech-services-ops',
+    task: 'email-triage',
+    escalate: 'email-triage',
+  }[action] || 'email-triage';
+}
 
 window.toggleBody = function () {
   bodyExpanded = !bodyExpanded;

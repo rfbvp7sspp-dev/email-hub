@@ -41,7 +41,7 @@ export function startClock(id) {
 
 // ── VIEW SWITCHER ──
 
-const VIEW_IDS = ['todayView', 'inboxView', 'emailView', 'tasksView', 'searchView'];
+const VIEW_IDS = ['todayView', 'inboxView', 'emailView', 'composeView', 'tasksView', 'searchView'];
 
 const TAB_MAP = {
   todayView:  'tab-today',

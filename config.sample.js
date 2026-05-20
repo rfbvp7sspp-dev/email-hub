@@ -16,8 +16,9 @@ export const SETTINGS_TEMPLATE = {
   // PHASE 2 ONLY — leave blank until the backend HTTP flows exist.
   endpoint: '',
 
-  // Shared secret sent as the `x-api-key` header on every backend call.
-  // The Power Automate flow rejects any request without it.
+  // Shared secret for the Power Automate flow. One-way browser commands send
+  // this inside the JSON body as `apiKey` to avoid CORS preflight failures.
+  // Response-based sync can also send it as the `x-api-key` header.
   apiKey: '',
 
   // Personal share link to your private OneDrive TerritoryOS folder.

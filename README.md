@@ -61,9 +61,32 @@ filled at runtime from the Settings screen, so no real names live in the repo.
 - HTML email body stripped to plain text automatically
 - Recents list (last 10 emails, persisted in localStorage)
 - Copy prompt to clipboard and open Claude / ChatGPT / Copilot in one tap
+- Send email/debrief commands to a configured Power Automate endpoint
 - Task list: add manually or generate from current email
 - Task status tracking (To Do / In Progress / Waiting / Done)
 - Offline capable (no network requests at runtime)
+
+---
+
+## Power Automate bridge
+
+If **Backend Endpoint** is set in Settings, JP Hub can post structured commands
+to Power Automate:
+
+- Email action cards include a **Flow** button.
+- **Create Email** starts a new outreach draft without importing an email file.
+- New debriefs are sent to the backend first, with JSON download as fallback.
+- The **Sync** quick action can pull recent emails if the flow returns CORS
+  headers.
+
+See `POWER_AUTOMATE_HUB_FLOW.md` for the exact payload shape and minimum flow
+steps.
+
+After Power Automate writes a command file, process the local queue with:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File ".Claude Agent\Agents\hospital-context\scripts\process-workflow-inbox.ps1"
+```
 
 ---
 

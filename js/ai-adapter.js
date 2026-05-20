@@ -1,55 +1,80 @@
-// AI Adapter — stub module. No live AI calls happen from this frontend.
+// AI Adapter / Hub command bridge.
 //
-// Current workflow (clipboard):
-//   1. buildPrompt() assembles the prompt string.
-//   2. providers.js copies it to clipboard.
-//   3. User pastes into Claude / ChatGPT / Copilot.
+// Clipboard workflow still works through providers.js. This module adds the
+// missing backend path so JP Hub can send structured commands to Power Automate
+// without putting private keys or agent credentials into public GitHub Pages.
 //
-// Why no API keys in frontend JS?
-//   Any key in a static HTML/JS file is public. Anyone who views source,
-//   checks DevTools, or downloads the page can extract it. Never store
-//   Anthropic / OpenAI / Azure keys here.
-//
-// Future adapter options (pick one when ready):
-//
-//   A. Google Apps Script proxy
-//      - Deploy a Web App that accepts POST {prompt, model}
-//      - Key lives in the Apps Script environment, not the frontend
-//      - Free tier is generous for solo use
-//
-//   B. Power Automate HTTP flow
-//      - HTTP trigger -> call Azure OpenAI or OpenAI connector
-//      - Fits within an existing Microsoft 365 toolchain
-//      - May need IT approval for external connectors
-//
-//   C. Cloudflare Worker
-//      - Tiny serverless function at the edge, ~free tier
-//      - Key stored as a Worker secret (env var)
-//      - Returns streamed response to the app
-//
-//   D. Ollama (local desktop)
-//      - Run Claude or Llama locally via Ollama
-//      - Endpoint: http://localhost:11434/api/generate
-//      - Zero cloud dependency, zero cost, works offline
-//      - Best for sensitive patient or commercial data
-//
-//   E. Grok via xAI API (future)
-//      - When xAI releases a production-ready API key model
-//      - Same pattern as OpenAI — proxy via option A, B, or C above
-//
-// To activate an adapter: implement sendToAI() below and remove the throw.
+// Power Automate note:
+// Browser calls from GitHub Pages are commonly blocked by CORS unless the flow
+// response includes Access-Control-Allow-Origin. For operational commands this
+// module sends a simple one-way request that Power Automate still receives.
+
+import { getSettings } from './settings.js';
 
 /**
- * Send a prompt to an AI backend and return the response text.
- * Not yet implemented — use clipboard workflow via providers.js.
+ * Send a prompt to a configured AI backend and return the response text/object.
+ * This requires the Power Automate flow to return CORS headers.
  *
- * @param {string} prompt   - The full prompt string.
- * @param {object} [opts]   - Optional: { model, maxTokens, stream }
- * @returns {Promise<string>}
+ * @param {string} prompt
+ * @param {object} [opts]
+ * @returns {Promise<object>}
  */
 export async function sendToAI(prompt, opts = {}) {
-  throw new Error(
-    'sendToAI is not yet connected. Use the clipboard workflow: ' +
-    'copyAndOpen() in providers.js copies the prompt and opens the AI app.'
-  );
+  return sendHubCommand({
+    type: 'ai_prompt',
+    prompt,
+    model: opts.model || '',
+  }, { expectResponse: true });
+}
+
+/**
+ * Send a structured command to the configured Power Automate endpoint.
+ *
+ * Default mode is fire-and-forget because static GitHub Pages cannot read most
+ * Power Automate responses unless the flow explicitly returns CORS headers.
+ * The request body includes apiKey so the flow can validate without requiring
+ * a custom browser header/preflight.
+ *
+ * @param {object} command
+ * @param {object} [opts] - { expectResponse?: boolean }
+ * @returns {Promise<object>}
+ */
+export async function sendHubCommand(command, opts = {}) {
+  const settings = getSettings();
+  const endpoint = settings.endpoint;
+  if (!endpoint) {
+    throw new Error('Add your Power Automate endpoint in Settings first.');
+  }
+
+  const envelope = {
+    source: 'jphub',
+    schemaVersion: 1,
+    sentAt: new Date().toISOString(),
+    apiKey: settings.apiKey || '',
+    command,
+  };
+
+  if (opts.expectResponse) {
+    const headers = { 'Content-Type': 'application/json' };
+    if (settings.apiKey) headers['x-api-key'] = settings.apiKey;
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(envelope),
+    });
+    const text = await response.text();
+    if (!response.ok) {
+      throw new Error(text || `Backend returned ${response.status}`);
+    }
+    return text ? JSON.parse(text) : { success: true };
+  }
+
+  await fetch(endpoint, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+    body: JSON.stringify(envelope),
+  });
+
+  return { success: true, status: 'sent' };
 }

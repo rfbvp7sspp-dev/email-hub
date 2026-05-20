@@ -1,5 +1,6 @@
 import { saveDebrief, loadDebriefs, deleteDebrief, getRecentHospitals } from './storage.js';
 import { showToast, esc, fmtTime } from './ui.js';
+import { sendHubCommand } from './ai-adapter.js';
 
 export function createDebrief(overrides = {}) {
   return {
@@ -34,7 +35,7 @@ export function closeDebriefModal() {
   document.getElementById('debriefModal')?.classList.remove('open');
 }
 
-export function submitDebrief() {
+export async function submitDebrief() {
   const hospital = document.getElementById('debriefHospital')?.value.trim() || '';
   const notes    = document.getElementById('debriefNotes')?.value.trim()    || '';
 
@@ -43,10 +44,22 @@ export function submitDebrief() {
     return;
   }
 
-  saveDebrief(createDebrief({ hospital, notes }));
-  _exportDebriefJSON(hospital, notes);
+  const debrief = createDebrief({ hospital, notes });
+  const record = buildDebriefRecord(hospital, notes);
+  saveDebrief(debrief);
+  try {
+    await sendHubCommand({
+      type: 'debrief',
+      requestedAgent: 'hospital-context',
+      debrief,
+      record,
+    });
+    showToast('✓', 'Debrief sent to Power Automate');
+  } catch {
+    _exportDebriefJSON(hospital, notes);
+    showToast('✓', 'Debrief saved + JSON exported');
+  }
   closeDebriefModal();
-  showToast('&#10003;', 'Debrief saved + JSON exported');
 
   if (document.getElementById('todayView')?.classList.contains('active')) {
     window._renderToday?.();
