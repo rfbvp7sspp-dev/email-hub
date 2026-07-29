@@ -48,7 +48,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--dark);
 .sidebar-items{flex:1;overflow-y:auto;padding:8px}
 .sidebar-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--rs);background:#fafafa;margin-bottom:4px;font-size:12px;animation:slideIn .2s}
 @keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
-.sidebar-item-code{font-family:'Space Mono',monospace;font-weight:700;color:var(--dark);white-space:nowrap;min-width:110px}
+.sidebar-item-code{font-family:'Space Mono',monospace;font-weight:700;color:var(--dark);white-space:nowrap;min-width:110px;cursor:pointer;text-decoration:underline;text-decoration-color:rgba(245,166,35,.6);text-underline-offset:2px;transition:color .15s}
+.sidebar-item-code:hover{color:#b07a16}
+.sidebar-item-code.copied{color:#2e7d32;text-decoration-color:#4caf50}
 .sidebar-item-name{flex:1;color:var(--muted);font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .sidebar-item-x{cursor:pointer;color:#ccc;font-weight:700;font-size:16px;padding:0 4px;transition:color .15s}.sidebar-item-x:hover{color:#e74c3c}
 .sidebar-item-qty{display:flex;align-items:center;gap:4px;flex-shrink:0}.sidebar-qty-btn{width:20px;height:20px;border:1px solid #ddd;border-radius:3px;background:#fff;cursor:pointer;font-size:13px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;color:var(--dark);transition:all .15s}.sidebar-qty-btn:hover{background:var(--primary);color:#fff;border-color:var(--primary)}.sidebar-qty-num{font-family:'Space Mono',monospace;font-size:11px;font-weight:700;min-width:18px;text-align:center;color:var(--dark)}
@@ -90,6 +92,39 @@ body{font-family:'DM Sans',sans-serif;background:var(--light);color:var(--dark);
 .ctx-divider{height:1px;background:var(--border);margin:4px 0}
 .product-code.editing,.product-name.editing{background:#fff;border:1px solid var(--gold);outline:none;padding:4px 8px;border-radius:3px;min-width:60px}
 .product-name.editing{flex:1}
+/* ---- proposal export ---- */
+.modal.wide{max-width:760px;max-height:92vh;overflow-y:auto}
+.modal-sec{margin-bottom:18px}
+.modal-sec h4{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin-bottom:8px}
+.field-row{display:flex;gap:10px;flex-wrap:wrap}
+.field{flex:1;min-width:150px}
+.field label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px}
+.modal .field input{margin-bottom:0}
+.layout-grid{display:flex;flex-wrap:wrap;gap:8px}
+.layout-card{width:118px;border:1px solid var(--border);border-radius:var(--rs);padding:8px;cursor:pointer;text-align:center;background:#fff;transition:all .15s}
+.layout-card:hover{border-color:var(--gold)}
+.layout-card.sel{border-color:var(--gold);background:var(--code-bg);box-shadow:0 2px 8px rgba(245,166,35,.18)}
+.lc-thumb{height:66px;display:flex;align-items:center;justify-content:center;margin-bottom:6px}
+.layout-card svg{display:block;max-width:100%;max-height:66px}
+.layout-card .lc-name{font-size:11px;font-weight:600;line-height:1.25}
+.layout-card .lc-meta{font-size:9.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+.opt-row{display:flex;gap:8px;flex-wrap:wrap}
+.opt{flex:1;min-width:200px;border:1px solid var(--border);border-radius:var(--rs);padding:10px;cursor:pointer;background:#fff;transition:all .15s}
+.opt:hover{border-color:var(--gold)}
+.opt.sel{border-color:var(--gold);background:var(--code-bg)}
+.opt b{display:block;font-size:12px;margin-bottom:2px}
+.opt span{font-size:11px;color:var(--muted);line-height:1.35}
+.logo-slots{display:flex;gap:8px;flex-wrap:wrap}
+.logo-slot{width:104px;height:56px;border:1px dashed var(--border);border-radius:var(--rs);display:flex;align-items:center;justify-content:center;cursor:pointer;background:#fafafa;font-size:10px;color:var(--muted);position:relative;overflow:hidden;text-align:center;padding:4px}
+.logo-slot:hover{border-color:var(--gold)}
+.logo-slot img{max-width:100%;max-height:100%;object-fit:contain}
+.logo-slot .rm{position:absolute;top:1px;right:4px;color:#e74c3c;font-weight:700;font-size:14px;line-height:1}
+.sidebar-item.drop{outline:2px dashed var(--gold);outline-offset:-2px}
+.sidebar-item-thumb{width:24px;height:20px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:3px;background:#fff;overflow:hidden}
+.sidebar-item-thumb.none{border-style:dashed;background:transparent}
+.sidebar-item-thumb img{max-width:100%;max-height:100%;object-fit:contain}
+.hint-line{font-size:11px;color:var(--muted);line-height:1.4;margin-top:6px}
+.busy{opacity:.55;pointer-events:none}
 /* ---- product photos (extracted from the 2026 PDF guide) ---- */
 .photo-strip{display:flex;flex-wrap:wrap;align-items:stretch;gap:12px;margin:0 0 18px;padding:14px;background:#fff;border:1px solid var(--border);border-radius:var(--r);box-shadow:var(--ss)}
 .photo-card{width:134px;max-width:340px;display:flex;flex-direction:column;align-items:center;gap:5px}
@@ -161,6 +196,8 @@ body.photos-off .btn-photos{opacity:.5}
       </div>
       <button class="sidebar-btn sf" id="btnPopOut">&#8599; Pop Out for Salesforce</button>
       <button class="sidebar-btn automation" id="btnAutomation">&#9889; Run Automation</button>
+      <button class="sidebar-btn primary" id="btnProposal">&#128196; Export Proposal (PPTX)</button>
+      <button class="sidebar-btn" id="btnProcare">&#9993; Request ProCare Quote</button>
       <button class="sidebar-btn danger" id="btnClearQuote">Clear All</button>
     </div>
     <div class="templates-section">
@@ -180,6 +217,48 @@ body.photos-off .btn-photos{opacity:.5}
     </div>
   </div>
 </div>
+
+<div class="modal-overlay" id="proposalModal">
+  <div class="modal wide">
+    <h3>Export proposal deck</h3>
+    <div class="modal-sec">
+      <h4>Proposal details</h4>
+      <div class="field-row">
+        <div class="field"><label>Proposal title</label><input type="text" id="ppTitle" placeholder="Equipment Proposal" autocomplete="off"></div>
+        <div class="field"><label>Customer</label><input type="text" id="ppCustomer" placeholder="[Customer Name]" autocomplete="off"></div>
+      </div>
+      <div class="field-row">
+        <div class="field"><label>Prepared by</label><input type="text" id="ppBy" placeholder="[Your Name]" autocomplete="off"></div>
+        <div class="field"><label>Date</label><input type="text" id="ppDate" autocomplete="off"></div>
+        <div class="field"><label>Quote ref</label><input type="text" id="ppRef" placeholder="[Quote Ref]" autocomplete="off"></div>
+      </div>
+      <div class="field" style="margin-top:10px"><label>Note under the first equipment slide (optional)</label><input type="text" id="ppNote" placeholder="e.g. Lands in OT2, OT5 and OT6..." autocomplete="off"></div>
+    </div>
+    <div class="modal-sec">
+      <h4>Layout</h4>
+      <div class="layout-grid" id="layoutGrid"></div>
+    </div>
+    <div class="modal-sec">
+      <h4>Grid behaviour</h4>
+      <div class="opt-row">
+        <div class="opt sel" data-gridmode="editable"><b>Editable grid</b><span>Every tile is a real PowerPoint shape on identical maths. Text stays editable.</span></div>
+        <div class="opt" data-gridmode="locked"><b>Locked grid</b><span>The whole grid exports as one picture. Moves and resizes as a single object.</span></div>
+      </div>
+    </div>
+    <div class="modal-sec">
+      <h4>Buying group logos <span style="text-transform:none;letter-spacing:0;font-weight:400">(saved on this device)</span></h4>
+      <div class="logo-slots" id="logoSlots"></div>
+      <div class="hint-line">Click a slot to add a logo. They render on their own strip slide. Nothing is downloaded from the internet.</div>
+    </div>
+    <div class="modal-btns">
+      <button class="sidebar-btn" id="btnCancelProposal">Cancel</button>
+      <button class="sidebar-btn primary" id="btnBuildProposal">Export PPTX</button>
+    </div>
+    <div class="hint-line" id="ppStatus"></div>
+  </div>
+</div>
+
+<input type="file" id="logoFile" accept="image/*" style="display:none">
 
 <div class="detail-overlay" id="detailModal">
   <div class="detail-card">
@@ -670,8 +749,12 @@ function renderQuote() {
   var html = '';
   quoteItems.forEach(function(item) {
     var qty = item.qty || 1;
-    html += '<div class="sidebar-item" data-id="' + item.id + '">';
-    html += '<span class="sidebar-item-code">' + esc(item.code) + '</span>';
+    var thumbSrc = imageForCode(item.code);
+    html += '<div class="sidebar-item" data-id="' + item.id + '" data-code="' + esc(item.code) + '" title="Drag a photo here to attach one to this code">';
+    html += thumbSrc
+      ? '<span class="sidebar-item-thumb"><img src="' + thumbSrc + '" alt=""></span>'
+      : '<span class="sidebar-item-thumb none"></span>';
+    html += '<span class="sidebar-item-code" data-copy="' + esc(item.code) + '" title="Click to copy">' + esc(item.code) + '</span>';
     html += '<span class="sidebar-item-name">' + esc(item.name) + '</span>';
     html += '<div class="sidebar-item-qty">';
     html += '<button class="sidebar-qty-btn" data-qty-dec="' + item.id + '">-</button>';
@@ -685,6 +768,14 @@ function renderQuote() {
 }
 
 document.getElementById('quoteItems').addEventListener('click', function(e) {
+  var copyEl = e.target.closest('.sidebar-item-code[data-copy]');
+  if (copyEl) {
+    copyText(copyEl.dataset.copy);
+    copyEl.classList.add('copied');
+    setTimeout(function() { copyEl.classList.remove('copied'); }, 700);
+    showToast('Copied: ' + copyEl.dataset.copy);
+    return;
+  }
   var btn = e.target.closest('[data-remove]');
   if (btn) { removeFromQuote(parseFloat(btn.dataset.remove)); return; }
   var inc = e.target.closest('[data-qty-inc]');
@@ -1145,6 +1236,649 @@ function makeEditable(el) {
   el.addEventListener('blur', finishEdit);
   el.addEventListener('keydown', handleKey);
 }
+
+
+// ============================================================
+// PROPOSAL EXPORT (PPTX) + PROCARE REQUEST
+// PptxGenJS is fetched from the CDN the first time you export, so the
+// guide itself still opens with no internet.
+// ============================================================
+var PPTX_CDN = 'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js';
+var pptxLoader = null;
+function loadPptx() {
+  if (window.PptxGenJS) return Promise.resolve();
+  if (pptxLoader) return pptxLoader;
+  pptxLoader = new Promise(function(resolve, reject) {
+    var s = document.createElement('script');
+    s.src = PPTX_CDN;
+    s.onload = function() { resolve(); };
+    s.onerror = function() { pptxLoader = null; reject(new Error('no-cdn')); };
+    document.head.appendChild(s);
+  });
+  return pptxLoader;
+}
+
+// ---- photos: guide photos first, then anything you have attached yourself ---
+var userImages = {};
+try { userImages = JSON.parse(localStorage.getItem('stryker_product_images_2026') || '{}'); } catch(e) {}
+
+function imageForCode(code) {
+  if (userImages[code]) return userImages[code];
+  var id = (typeof PHOTO_CODE !== 'undefined') ? PHOTO_CODE[code] : null;
+  return id && PHOTOS[id] ? PHOTOS[id] : null;
+}
+
+function saveUserImages() {
+  try {
+    localStorage.setItem('stryker_product_images_2026', JSON.stringify(userImages));
+    return true;
+  } catch(e) {
+    showToast('Storage full — photo not saved. Remove a few attached photos and try again.');
+    return false;
+  }
+}
+
+function downscaleImage(file, maxEdge, quality) {
+  return new Promise(function(resolve, reject) {
+    var fr = new FileReader();
+    fr.onload = function() {
+      var img = new Image();
+      img.onload = function() {
+        var sc = Math.min(1, maxEdge / Math.max(img.width, img.height));
+        var c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(img.width * sc));
+        c.height = Math.max(1, Math.round(img.height * sc));
+        var ctx = c.getContext('2d');
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, c.width, c.height);
+        ctx.drawImage(img, 0, 0, c.width, c.height);
+        resolve(c.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = function() { reject(new Error('bad-image')); };
+      img.src = fr.result;
+    };
+    fr.onerror = function() { reject(new Error('bad-file')); };
+    fr.readAsDataURL(file);
+  });
+}
+
+// drag a photo onto a line in the quote builder to attach it to that code
+(function() {
+  var box = document.getElementById('quoteItems');
+  box.addEventListener('dragover', function(e) {
+    var item = e.target.closest('.sidebar-item');
+    if (!item) return;
+    e.preventDefault();
+    item.classList.add('drop');
+  });
+  box.addEventListener('dragleave', function(e) {
+    var item = e.target.closest('.sidebar-item');
+    if (item) item.classList.remove('drop');
+  });
+  box.addEventListener('drop', function(e) {
+    var item = e.target.closest('.sidebar-item');
+    if (!item) return;
+    e.preventDefault();
+    item.classList.remove('drop');
+    var file = e.dataTransfer.files && e.dataTransfer.files[0];
+    if (!file || file.type.indexOf('image/') !== 0) { showToast('Drop an image file'); return; }
+    var code = item.dataset.code;
+    downscaleImage(file, 1200, 0.8).then(function(data) {
+      userImages[code] = data;
+      if (saveUserImages()) showToast('Photo attached to ' + code);
+      renderQuote();
+    }).catch(function() { showToast('Could not read that image'); });
+  });
+})();
+
+// ---- buying group logos -----------------------------------------------------
+var buyingLogos = [];
+try { buyingLogos = JSON.parse(localStorage.getItem('stryker_logos_2026') || '[]'); } catch(e) {}
+var logoTargetSlot = 0;
+
+function renderLogoSlots() {
+  var wrap = document.getElementById('logoSlots');
+  var html = '';
+  for (var i = 0; i < 6; i++) {
+    if (buyingLogos[i]) {
+      html += '<div class="logo-slot" data-slot="' + i + '"><img src="' + buyingLogos[i] + '" alt=""><span class="rm" data-rmlogo="' + i + '">&times;</span></div>';
+    } else {
+      html += '<div class="logo-slot" data-slot="' + i + '">+ logo</div>';
+    }
+  }
+  wrap.innerHTML = html;
+}
+
+document.getElementById('logoSlots').addEventListener('click', function(e) {
+  var rm = e.target.closest('[data-rmlogo]');
+  if (rm) {
+    buyingLogos.splice(parseInt(rm.dataset.rmlogo), 1);
+    try { localStorage.setItem('stryker_logos_2026', JSON.stringify(buyingLogos)); } catch(err) {}
+    renderLogoSlots();
+    return;
+  }
+  var slot = e.target.closest('[data-slot]');
+  if (!slot) return;
+  logoTargetSlot = parseInt(slot.dataset.slot);
+  document.getElementById('logoFile').click();
+});
+
+document.getElementById('logoFile').addEventListener('change', function(e) {
+  var file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  downscaleImage(file, 600, 0.85).then(function(data) {
+    buyingLogos[logoTargetSlot] = data;
+    try { localStorage.setItem('stryker_logos_2026', JSON.stringify(buyingLogos)); }
+    catch(err) { showToast('Storage full — logo not saved'); }
+    renderLogoSlots();
+  }).catch(function() { showToast('Could not read that image'); });
+});
+
+// ---- PowerPoint only reliably reads PNG/JPEG, so convert on the way out -----
+var jpegCache = {};
+function toJpeg(src) {
+  if (!src) return Promise.resolve(null);
+  if (jpegCache[src]) return Promise.resolve(jpegCache[src]);
+  if (src.indexOf('data:image/jpeg') === 0 || src.indexOf('data:image/png') === 0) {
+    jpegCache[src] = src;
+    return Promise.resolve(src);
+  }
+  return new Promise(function(resolve) {
+    var img = new Image();
+    img.onload = function() {
+      var c = document.createElement('canvas');
+      c.width = img.width; c.height = img.height;
+      var ctx = c.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0);
+      var out = c.toDataURL('image/jpeg', 0.9);
+      jpegCache[src] = out;
+      resolve(out);
+    };
+    img.onerror = function() { resolve(null); };
+    img.src = src;
+  });
+}
+
+function loadBitmap(src) {
+  return new Promise(function(resolve) {
+    var img = new Image();
+    img.onload = function() { resolve(img); };
+    img.onerror = function() { resolve(null); };
+    img.src = src;
+  });
+}
+
+// ============================================================
+// LAYOUT ENGINE — one function computes every tile, all templates derive
+// from it, so tiles are mathematically identical on every slide.
+// ============================================================
+var PAGES = {
+  '16x9': { w: 10, h: 5.625, pptx: 'LAYOUT_16x9' },
+  'a4p':  { w: 8.27, h: 11.69, pptx: 'A4P' }
+};
+
+var PROPOSAL_LAYOUTS = {
+  g22:   { label: 'Grid 2×2',   page: '16x9', cols: 2, rows: 2, per: 4,  meta: '16:9 landscape' },
+  g32:   { label: 'Grid 3×2',   page: '16x9', cols: 3, rows: 2, per: 6,  meta: '16:9 landscape' },
+  g42:   { label: 'Grid 4×2',   page: '16x9', cols: 4, rows: 2, per: 8,  meta: '16:9 landscape' },
+  hero3: { label: 'Hero + 3',        page: '16x9', hero: true,       per: 4,  meta: '16:9 landscape' },
+  p23:   { label: 'Portrait 2×3', page: 'a4p', cols: 2, rows: 3, per: 6, meta: 'A4 portrait' },
+  p1up:  { label: 'Portrait 1-up',   page: 'a4p', oneUp: true,       per: 1,  meta: 'A4 portrait' },
+  spec:  { label: 'Spec table',      page: '16x9', specTable: true,  per: 10, meta: '16:9 landscape' }
+};
+
+function contentBox(def) {
+  var pg = PAGES[def.page];
+  var side = def.page === 'a4p' ? 0.55 : 0.45;
+  var top = def.page === 'a4p' ? 1.55 : 1.35;
+  var bottom = def.page === 'a4p' ? 0.75 : 0.6;
+  return { x: side, y: top, w: pg.w - side * 2, h: pg.h - top - bottom };
+}
+
+function gridRects(cols, rows, box, gutter) {
+  var w = (box.w - gutter * (cols - 1)) / cols;
+  var h = (box.h - gutter * (rows - 1)) / rows;
+  var out = [];
+  for (var r = 0; r < rows; r++) {
+    for (var c = 0; c < cols; c++) {
+      out.push({ x: box.x + c * (w + gutter), y: box.y + r * (h + gutter), w: w, h: h });
+    }
+  }
+  return out;
+}
+
+function tileRects(def, noteBar) {
+  var box = contentBox(def);
+  if (noteBar) box.h -= 0.85;
+  var g = 0.16;
+  if (def.hero) {
+    var heroW = box.w * 0.54;
+    var out = [{ x: box.x, y: box.y, w: heroW, h: box.h }];
+    var sw = box.w - heroW - g, sh = (box.h - g * 2) / 3;
+    for (var i = 0; i < 3; i++) out.push({ x: box.x + heroW + g, y: box.y + i * (sh + g), w: sw, h: sh });
+    return out;
+  }
+  if (def.oneUp) return [{ x: box.x, y: box.y, w: box.w * 0.52, h: box.h }];
+  if (def.specTable) return [];
+  return gridRects(def.cols, def.rows, box, g);
+}
+
+// ---- layout thumbnails, drawn from the same maths --------------------------
+function layoutThumb(key) {
+  var def = PROPOSAL_LAYOUTS[key];
+  var pg = PAGES[def.page];
+  var W = def.page === 'a4p' ? 68 : 100;
+  var sc = W / pg.w, H = Math.round(pg.h * sc);
+  var s = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">';
+  s += '<rect x="0.5" y="0.5" width="' + (W - 1) + '" height="' + (H - 1) + '" fill="#fff" stroke="#c9c9c4"/>';
+  s += '<rect x="4" y="4" width="' + (W * 0.45) + '" height="3" fill="#1a1a1a"/>';
+  s += '<rect x="4" y="9.5" width="' + (W - 8) + '" height="1.5" fill="#F5A623"/>';
+  if (def.specTable) {
+    for (var r = 0; r < 5; r++) {
+      s += '<rect x="6" y="' + (16 + r * 5) + '" width="' + (W - 12) + '" height="3.6" fill="' + (r === 0 ? '#3d4f5f' : '#e8e8e4') + '"/>';
+    }
+  } else {
+    var rects = tileRects(def, false);
+    rects.forEach(function(t) {
+      s += '<rect x="' + (t.x * sc) + '" y="' + (t.y * sc) + '" width="' + (t.w * sc) + '" height="' + (t.h * sc) + '" fill="#e8e8e4" stroke="#c9c9c4" stroke-width="0.6"/>';
+    });
+    if (def.oneUp) {
+      var t0 = rects[0];
+      var tx = (t0.x + t0.w + 0.16) * sc;
+      for (var k = 0; k < 5; k++) {
+        s += '<rect x="' + tx + '" y="' + ((t0.y + 0.3 + k * 0.55) * sc) + '" width="' + ((contentBox(def).w - t0.w - 0.16) * sc) + '" height="' + (0.2 * sc) + '" fill="#e8e8e4"/>';
+      }
+    }
+  }
+  return s + '</svg>';
+}
+
+function renderLayoutPicker() {
+  var wrap = document.getElementById('layoutGrid');
+  var html = '';
+  for (var k in PROPOSAL_LAYOUTS) {
+    var d = PROPOSAL_LAYOUTS[k];
+    html += '<div class="layout-card' + (k === proposalLayout ? ' sel' : '') + '" data-layout="' + k + '">';
+    html += '<div class="lc-thumb">' + layoutThumb(k) + '</div>';
+    html += '<div class="lc-name">' + esc(d.label) + '</div><div class="lc-meta">' + esc(d.meta) + '</div></div>';
+  }
+  wrap.innerHTML = html;
+}
+
+var proposalLayout = 'g32';
+var proposalGridMode = 'editable';
+
+document.getElementById('layoutGrid').addEventListener('click', function(e) {
+  var card = e.target.closest('[data-layout]');
+  if (!card) return;
+  proposalLayout = card.dataset.layout;
+  renderLayoutPicker();
+});
+
+document.querySelectorAll('[data-gridmode]').forEach(function(el) {
+  el.addEventListener('click', function() {
+    proposalGridMode = el.dataset.gridmode;
+    document.querySelectorAll('[data-gridmode]').forEach(function(o) { o.classList.toggle('sel', o === el); });
+  });
+});
+
+// ============================================================
+// DECK BUILDER
+// ============================================================
+var GOLD = 'F5A623', DARK = '1A1A1A', SLATE = '3D4F5F', MUTED = '8A8A86', BORDER = 'E2E2DE', WASH = 'F5F5F3';
+var FONT = 'Arial';
+
+function ppField(id, fallback) {
+  var v = (document.getElementById(id).value || '').trim();
+  return v || fallback;
+}
+
+function slideChrome(pptx, slide, def, opts) {
+  var pg = PAGES[def.page];
+  var side = def.page === 'a4p' ? 0.55 : 0.45;
+  slide.background = { color: 'FFFFFF' };
+  slide.addText('stryker', { x: side, y: 0.22, w: 2.4, h: 0.4, fontSize: 20, bold: true, color: DARK, fontFace: FONT });
+  if (opts.headerRight) {
+    slide.addText(opts.headerRight, { x: pg.w - side - 4, y: 0.28, w: 4, h: 0.3, fontSize: 11, color: DARK, align: 'right', fontFace: FONT });
+  }
+  slide.addShape('rect', { x: side, y: 0.72, w: pg.w - side * 2, h: 0.022, fill: { color: GOLD } });
+  if (opts.eyebrow) {
+    slide.addText(opts.eyebrow.toUpperCase(), { x: side, y: 0.9, w: pg.w - side * 2, h: 0.24, fontSize: 9.5, color: MUTED, charSpacing: 2, fontFace: FONT });
+  }
+  if (opts.title) {
+    slide.addText(opts.title, { x: side, y: 1.06, w: pg.w - side * 2, h: 0.42, fontSize: def.page === 'a4p' ? 20 : 22, bold: true, color: DARK, fontFace: FONT });
+  }
+  slide.addShape('rect', { x: side, y: pg.h - 0.46, w: pg.w - side * 2, h: 0.012, fill: { color: BORDER } });
+  slide.addText('Always refer to the Instructions for Use (IFU) before use.  For professional use only.  |  stryker.com.au',
+    { x: side, y: pg.h - 0.4, w: pg.w - side * 2 - 1.6, h: 0.26, fontSize: 7.5, color: MUTED, fontFace: FONT });
+  slide.addText(String(opts.page || ''), { x: pg.w - side - 1.5, y: pg.h - 0.4, w: 1.5, h: 0.26, fontSize: 7.5, color: MUTED, align: 'right', fontFace: FONT });
+}
+
+function addCardNative(slide, rect, item, imgData) {
+  var pad = 0.11;
+  slide.addShape('rect', { x: rect.x, y: rect.y, w: rect.w, h: rect.h, fill: { color: 'FFFFFF' }, line: { color: BORDER, width: 0.75 } });
+  var imgH = Math.max(0.5, rect.h * 0.52);
+  if (imgData) {
+    slide.addImage({ data: imgData, x: rect.x + pad, y: rect.y + pad, w: rect.w - pad * 2, h: imgH,
+                     sizing: { type: 'contain', w: rect.w - pad * 2, h: imgH } });
+  } else {
+    slide.addShape('rect', { x: rect.x + pad, y: rect.y + pad, w: rect.w - pad * 2, h: imgH, fill: { color: WASH }, line: { color: BORDER, width: 0.5, dashType: 'dash' } });
+    slide.addText('Photo to add\n' + item.code, { x: rect.x + pad, y: rect.y + pad, w: rect.w - pad * 2, h: imgH, fontSize: 8, color: MUTED, align: 'center', valign: 'middle', fontFace: FONT });
+  }
+  var ty = rect.y + pad + imgH + 0.1;
+  slide.addText(item.code, { x: rect.x + pad, y: ty, w: rect.w - pad * 2, h: 0.2, fontSize: 9, bold: true, color: 'B07A16', fontFace: FONT });
+  slide.addText(item.name, { x: rect.x + pad, y: ty + 0.2, w: rect.w - pad * 2, h: Math.max(0.24, rect.y + rect.h - (ty + 0.2) - 0.34),
+                             fontSize: rect.w > 2.4 ? 11 : 9.5, bold: true, color: DARK, valign: 'top', fontFace: FONT });
+  slide.addText('Qty ' + (item.qty || 1), { x: rect.x + pad, y: rect.y + rect.h - 0.3, w: rect.w - pad * 2, h: 0.22, fontSize: 9, color: MUTED, fontFace: FONT });
+}
+
+// ---- locked grid: paint every tile onto one canvas -> one picture -----------
+function wrapText(ctx, text, x, y, maxW, lineH, maxLines) {
+  var words = String(text).split(/\s+/), line = '', lines = [];
+  for (var i = 0; i < words.length; i++) {
+    var test = line ? line + ' ' + words[i] : words[i];
+    if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = words[i]; }
+    else line = test;
+    if (lines.length === maxLines) break;
+  }
+  if (line && lines.length < maxLines) lines.push(line);
+  lines.forEach(function(l, i) { ctx.fillText(l, x, y + i * lineH); });
+  return lines.length * lineH;
+}
+
+function renderGridPng(def, rects, items, bitmaps, box) {
+  var DPI = 150;
+  var c = document.createElement('canvas');
+  c.width = Math.round(box.w * DPI);
+  c.height = Math.round(box.h * DPI);
+  var ctx = c.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, c.width, c.height);
+  items.forEach(function(item, i) {
+    var r = rects[i];
+    if (!r) return;
+    var x = (r.x - box.x) * DPI, y = (r.y - box.y) * DPI, w = r.w * DPI, hh = r.h * DPI, pad = 0.11 * DPI;
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(x, y, w, hh);
+    ctx.strokeStyle = '#e2e2de'; ctx.lineWidth = 1.2; ctx.strokeRect(x + 0.6, y + 0.6, w - 1.2, hh - 1.2);
+    var imgH = Math.max(0.5 * DPI, hh * 0.52);
+    var bm = bitmaps[i];
+    if (bm) {
+      var sc = Math.min((w - pad * 2) / bm.width, imgH / bm.height);
+      var dw = bm.width * sc, dh = bm.height * sc;
+      ctx.drawImage(bm, x + (w - dw) / 2, y + pad + (imgH - dh) / 2, dw, dh);
+    } else {
+      ctx.fillStyle = '#f5f5f3'; ctx.fillRect(x + pad, y + pad, w - pad * 2, imgH);
+      ctx.fillStyle = '#8a8a86'; ctx.font = '600 ' + Math.round(DPI * 0.085) + 'px Arial'; ctx.textAlign = 'center';
+      ctx.fillText('Photo to add', x + w / 2, y + pad + imgH / 2);
+      ctx.fillText(item.code, x + w / 2, y + pad + imgH / 2 + DPI * 0.13);
+      ctx.textAlign = 'left';
+    }
+    var ty = y + pad + imgH + DPI * 0.18;
+    ctx.fillStyle = '#b07a16'; ctx.font = 'bold ' + Math.round(DPI * 0.09) + 'px Arial';
+    ctx.fillText(item.code, x + pad, ty);
+    ctx.fillStyle = '#1a1a1a'; ctx.font = 'bold ' + Math.round(DPI * (w > 2.4 * DPI ? 0.108 : 0.095)) + 'px Arial';
+    wrapText(ctx, item.name, x + pad, ty + DPI * 0.19, w - pad * 2, DPI * 0.15, 3);
+    ctx.fillStyle = '#8a8a86'; ctx.font = Math.round(DPI * 0.09) + 'px Arial';
+    ctx.fillText('Qty ' + (item.qty || 1), x + pad, y + hh - pad * 0.7);
+  });
+  return c.toDataURL('image/jpeg', 0.92);
+}
+
+function chunk(arr, n) {
+  var out = [];
+  for (var i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
+  return out;
+}
+
+function buildProposal() {
+  var def = PROPOSAL_LAYOUTS[proposalLayout];
+  var pg = PAGES[def.page];
+  var items = quoteItems.map(function(i) { return { code: i.code, name: i.name, qty: i.qty || 1 }; });
+  var title = ppField('ppTitle', 'Equipment Proposal');
+  var customer = ppField('ppCustomer', '[Customer Name]');
+  var by = ppField('ppBy', '[Your Name]');
+  var dateStr = ppField('ppDate', new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' }));
+  var ref = ppField('ppRef', '[Quote Ref]');
+  var note = (document.getElementById('ppNote').value || '').trim();
+  var status = document.getElementById('ppStatus');
+  status.textContent = 'Loading PowerPoint engine...';
+
+  return loadPptx().then(function() {
+    status.textContent = 'Preparing photos...';
+    return Promise.all(items.map(function(i) { return toJpeg(imageForCode(i.code)); }));
+  }).then(function(imgs) {
+    return Promise.all([imgs, Promise.all(imgs.map(function(s) { return s ? loadBitmap(s) : null; }))]);
+  }).then(function(pair) {
+    var imgs = pair[0], bitmaps = pair[1];
+    status.textContent = 'Building slides...';
+    var pptx = new PptxGenJS();
+    if (def.page === 'a4p') { pptx.defineLayout({ name: 'A4P', width: pg.w, height: pg.h }); pptx.layout = 'A4P'; }
+    else { pptx.layout = 'LAYOUT_16x9'; }
+    pptx.author = by;
+    pptx.title = title;
+    var side = def.page === 'a4p' ? 0.55 : 0.45;
+    var pageNo = 1;
+
+    // ---------- title slide ----------
+    var t = pptx.addSlide();
+    t.background = { color: 'FFFFFF' };
+    t.addText('stryker', { x: side, y: 0.35, w: 3, h: 0.55, fontSize: 26, bold: true, color: DARK, fontFace: FONT });
+    t.addShape('rect', { x: side, y: 1.05, w: pg.w - side * 2, h: 0.025, fill: { color: GOLD } });
+    t.addText('EQUIPMENT PROPOSAL', { x: side, y: 1.5, w: pg.w - side * 2, h: 0.3, fontSize: 11, color: MUTED, charSpacing: 3, fontFace: FONT });
+    t.addText(customer, { x: side, y: 1.85, w: pg.w - side * 2, h: 0.7, fontSize: def.page === 'a4p' ? 26 : 32, bold: true, color: DARK, fontFace: FONT });
+    t.addText(title, { x: side, y: 2.6, w: pg.w - side * 2, h: 0.4, fontSize: 15, color: MUTED, fontFace: FONT });
+    var metaY = 3.2, colW = (pg.w - side * 2) / 3;
+    [['DATE', dateStr], ['LINE ITEMS', String(items.length)], ['QUOTE REF', ref]].forEach(function(m, i) {
+      t.addText(m[0], { x: side + i * colW, y: metaY, w: colW, h: 0.24, fontSize: 8.5, color: MUTED, charSpacing: 2, fontFace: FONT });
+      t.addText(m[1], { x: side + i * colW, y: metaY + 0.24, w: colW, h: 0.3, fontSize: 13, bold: true, color: DARK, fontFace: FONT });
+    });
+    t.addShape('rect', { x: 0, y: pg.h - 0.95, w: pg.w, h: 0.95, fill: { color: GOLD } });
+    t.addText('YOUR STRYKER REPRESENTATIVE  ·  STRYKER SOUTH PACIFIC  ·  STRYKER.COM.AU',
+      { x: side, y: pg.h - 0.8, w: pg.w - side * 2, h: 0.26, fontSize: 8.5, color: 'FFFFFF', charSpacing: 2, fontFace: FONT });
+    t.addText(by, { x: side, y: pg.h - 0.54, w: pg.w - side * 2, h: 0.3, fontSize: 14, bold: true, color: 'FFFFFF', fontFace: FONT });
+
+    // ---------- equipment slides ----------
+    if (def.specTable) {
+      chunk(items, def.per).forEach(function(group, gi, all) {
+        var s = pptx.addSlide();
+        pageNo++;
+        slideChrome(pptx, s, def, { eyebrow: 'Included equipment  ·  ' + (gi + 1) + ' of ' + all.length, title: title, headerRight: 'Equipment Proposal', page: pageNo });
+        var box = contentBox(def);
+        var rows = [[
+          { text: 'Code', options: { bold: true, color: 'FFFFFF', fill: SLATE } },
+          { text: 'Description', options: { bold: true, color: 'FFFFFF', fill: SLATE } },
+          { text: 'Qty', options: { bold: true, color: 'FFFFFF', fill: SLATE, align: 'center' } },
+          { text: 'Notes', options: { bold: true, color: 'FFFFFF', fill: SLATE } }
+        ]];
+        group.forEach(function(i) {
+          // HOOK: richer spec fields (working length, angle, FOV) slot in here
+          // once product specs are added to the TABS data.
+          rows.push([i.code, i.name, { text: String(i.qty), options: { align: 'center' } }, '']);
+        });
+        s.addTable(rows, { x: box.x, y: box.y, w: box.w, colW: [box.w * 0.18, box.w * 0.52, box.w * 0.08, box.w * 0.22],
+                           fontSize: 10, fontFace: FONT, color: DARK, border: { type: 'solid', color: BORDER, pt: 0.5 }, valign: 'middle', rowH: 0.32 });
+      });
+    } else {
+      var groups = chunk(items, def.per);
+      groups.forEach(function(group, gi) {
+        var s = pptx.addSlide();
+        pageNo++;
+        var showNote = note && gi === 0;
+        slideChrome(pptx, s, def, { eyebrow: 'Included equipment  ·  ' + (gi + 1) + ' of ' + groups.length, title: title, headerRight: 'Equipment Proposal', page: pageNo });
+        var rects = tileRects(def, showNote);
+        var gImgs = group.map(function(i) { return imgs[items.indexOf(i)]; });
+        var gBmps = group.map(function(i) { return bitmaps[items.indexOf(i)]; });
+
+        if (proposalGridMode === 'locked') {
+          var box = contentBox(def);
+          if (showNote) box.h -= 0.85;
+          var png = renderGridPng(def, rects, group, gBmps, box);
+          s.addImage({ data: png, x: box.x, y: box.y, w: box.w, h: box.h });
+        } else {
+          group.forEach(function(item, i) { if (rects[i]) addCardNative(s, rects[i], item, gImgs[i]); });
+        }
+
+        if (def.oneUp && group[0]) {
+          var b = contentBox(def), lx = b.x + b.w * 0.52 + 0.25, lw = b.w * 0.48 - 0.25;
+          s.addText(group[0].code, { x: lx, y: b.y + 0.2, w: lw, h: 0.3, fontSize: 12, bold: true, color: 'B07A16', fontFace: FONT });
+          s.addText(group[0].name, { x: lx, y: b.y + 0.55, w: lw, h: 1.1, fontSize: 18, bold: true, color: DARK, fontFace: FONT });
+          s.addText('Quantity: ' + group[0].qty, { x: lx, y: b.y + 1.7, w: lw, h: 0.3, fontSize: 12, color: SLATE, fontFace: FONT });
+          s.addText('[ Add specification notes here ]', { x: lx, y: b.y + 2.1, w: lw, h: 1.2, fontSize: 11, color: MUTED, fontFace: FONT });
+        }
+
+        if (showNote) {
+          var nb = contentBox(def);
+          s.addShape('rect', { x: nb.x, y: nb.y + nb.h - 0.72, w: nb.w, h: 0.72, fill: { color: WASH } });
+          s.addText(note, { x: nb.x + 0.2, y: nb.y + nb.h - 0.66, w: nb.w - 0.4, h: 0.6, fontSize: 11, color: DARK, valign: 'middle', fontFace: FONT });
+        }
+      });
+    }
+
+    // ---------- line item summary ----------
+    chunk(items, def.page === 'a4p' ? 22 : 12).forEach(function(group, gi, all) {
+      var s = pptx.addSlide();
+      pageNo++;
+      slideChrome(pptx, s, def, { eyebrow: 'Line item summary' + (all.length > 1 ? '  ·  ' + (gi + 1) + ' of ' + all.length : ''), title: 'Equipment list', headerRight: 'Equipment Proposal', page: pageNo });
+      var box = contentBox(def);
+      var rows = [[
+        { text: 'Code', options: { bold: true, color: 'FFFFFF', fill: SLATE } },
+        { text: 'Description', options: { bold: true, color: 'FFFFFF', fill: SLATE } },
+        { text: 'Qty', options: { bold: true, color: 'FFFFFF', fill: SLATE, align: 'center' } },
+        { text: 'Notes', options: { bold: true, color: 'FFFFFF', fill: SLATE } }
+      ]];
+      group.forEach(function(i) {
+        rows.push([i.code, i.name, { text: String(i.qty), options: { align: 'center' } }, '']);
+      });
+      s.addTable(rows, { x: box.x, y: box.y, w: box.w, colW: [box.w * 0.18, box.w * 0.52, box.w * 0.08, box.w * 0.22],
+                         fontSize: 10, fontFace: FONT, color: DARK, border: { type: 'solid', color: BORDER, pt: 0.5 }, valign: 'middle', rowH: 0.3 });
+    });
+
+    // ---------- buying group logos ----------
+    var logos = buyingLogos.filter(Boolean);
+    if (logos.length) {
+      var ls = pptx.addSlide();
+      pageNo++;
+      slideChrome(pptx, ls, def, { eyebrow: 'Purchasing', title: 'Buying group arrangements', headerRight: 'Equipment Proposal', page: pageNo });
+      var lb = contentBox(def);
+      var lw2 = Math.min(2.0, (lb.w - 0.3 * (logos.length - 1)) / logos.length);
+      var startX = lb.x + (lb.w - (lw2 * logos.length + 0.3 * (logos.length - 1))) / 2;
+      logos.forEach(function(d, i) {
+        ls.addImage({ data: d, x: startX + i * (lw2 + 0.3), y: lb.y + lb.h / 2 - 0.5, w: lw2, h: 1.0, sizing: { type: 'contain', w: lw2, h: 1.0 } });
+      });
+    }
+
+    // ---------- photo library ----------
+    var have = [];
+    items.forEach(function(i, idx) { if (imgs[idx]) have.push({ code: i.code, data: imgs[idx] }); });
+    if (have.length) {
+      chunk(have, def.page === 'a4p' ? 24 : 24).forEach(function(group, gi, all) {
+        var ps = pptx.addSlide();
+        pageNo++;
+        slideChrome(pptx, ps, def, { eyebrow: 'Photo library' + (all.length > 1 ? '  ·  ' + (gi + 1) + ' of ' + all.length : ''), title: 'Loose photos to drag in', headerRight: 'Equipment Proposal', page: pageNo });
+        var pb = contentBox(def);
+        var cols = def.page === 'a4p' ? 4 : 6;
+        var rows2 = Math.ceil(group.length / cols);
+        var cellRects = gridRects(cols, Math.max(rows2, 1), pb, 0.12);
+        group.forEach(function(g, i) {
+          var r = cellRects[i];
+          if (!r) return;
+          ps.addImage({ data: g.data, x: r.x, y: r.y, w: r.w, h: r.h - 0.18, sizing: { type: 'contain', w: r.w, h: r.h - 0.18 } });
+          ps.addText(g.code, { x: r.x, y: r.y + r.h - 0.18, w: r.w, h: 0.16, fontSize: 7, color: MUTED, align: 'center', fontFace: FONT });
+        });
+      });
+    }
+
+    // ---------- next steps ----------
+    var ns = pptx.addSlide();
+    pageNo++;
+    slideChrome(pptx, ns, def, { eyebrow: 'Next steps', title: 'Where to from here', headerRight: 'Equipment Proposal', page: pageNo });
+    var nb2 = contentBox(def);
+    ns.addText([
+      { text: 'Confirm the equipment list and quantities above', options: { bullet: true } },
+      { text: 'Confirm theatre allocation and install dates', options: { bullet: true } },
+      { text: 'ProCare service coverage quoted separately', options: { bullet: true } },
+      { text: 'In-service and training plan to be scheduled on delivery', options: { bullet: true } },
+      { text: '[ Add your next step here ]', options: { bullet: true, color: MUTED } }
+    ], { x: nb2.x, y: nb2.y, w: nb2.w, h: nb2.h, fontSize: 14, color: DARK, lineSpacingMultiple: 1.6, fontFace: FONT });
+
+    status.textContent = 'Saving...';
+    var safe = customer.replace(/[^a-z0-9]+/ig, '_').replace(/^_|_$/g, '') || 'Proposal';
+    return pptx.writeFile({ fileName: 'Stryker_Proposal_' + safe + '.pptx' });
+  }).then(function() {
+    status.textContent = '';
+    document.getElementById('proposalModal').classList.remove('show');
+    showToast('Proposal exported');
+  }).catch(function(err) {
+    status.textContent = '';
+    if (err && err.message === 'no-cdn') showToast('Needs internet the first time — could not load the PowerPoint engine');
+    else { showToast('Export failed — see console'); console.error(err); }
+  });
+}
+
+// ---- modal wiring -----------------------------------------------------------
+document.getElementById('btnProposal').addEventListener('click', function() {
+  if (quoteItems.length === 0) { showToast('Add items to the quote first'); return; }
+  var d = document.getElementById('ppDate');
+  if (!d.value) d.value = new Date().toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric' });
+  renderLayoutPicker();
+  renderLogoSlots();
+  document.getElementById('ppStatus').textContent = '';
+  document.getElementById('proposalModal').classList.add('show');
+});
+
+document.getElementById('btnCancelProposal').addEventListener('click', function() {
+  document.getElementById('proposalModal').classList.remove('show');
+});
+
+document.getElementById('proposalModal').addEventListener('click', function(e) {
+  if (e.target === document.getElementById('proposalModal')) document.getElementById('proposalModal').classList.remove('show');
+});
+
+document.getElementById('btnBuildProposal').addEventListener('click', function() {
+  var btn = this;
+  btn.classList.add('busy');
+  buildProposal().then(function() { btn.classList.remove('busy'); });
+});
+
+// ============================================================
+// PROCARE SERVICE QUOTE REQUEST
+// ============================================================
+function buildProcareMail() {
+  var customer = (document.getElementById('ppCustomer').value || '').trim();
+  var title = (document.getElementById('ppTitle').value || '').trim();
+  var subjectTail = customer || title || 'Customer Proposal';
+  var subject = 'Quote Request - ProCare Service Coverage - ' + subjectTail;
+  var lines = quoteItems.map(function(i) { return (i.qty || 1) + ' x ' + i.code + ' - ' + i.name; });
+  var body = 'Hi ProCare team,\n\n' +
+    'Could you please quote ProCare service coverage for the equipment listed below. ' +
+    'This is going into a proposal for ' + (customer || 'a customer') + ', so I need the service pricing to present alongside the equipment.\n\n' +
+    'Equipment list\n' + lines.join('\n') + '\n\n' +
+    'Please include the annual service fee and the point of sale option so I can show the saving over the term. ' +
+    'Let me know if you need anything else from me to price it.\n\n' +
+    'Kind regards,';
+  return {
+    subject: subject,
+    body: body,
+    url: 'mailto:Procare.ssp@stryker.com?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body),
+    short: 'mailto:Procare.ssp@stryker.com?subject=' + encodeURIComponent(subject)
+  };
+}
+
+document.getElementById('btnProcare').addEventListener('click', function() {
+  if (quoteItems.length === 0) { showToast('Add items to the quote first'); return; }
+  var mail = buildProcareMail();
+  if (mail.url.length > 1800) {
+    copyText(mail.body);
+    window.location.href = mail.short;
+    showToast('Body copied, paste into Outlook');
+  } else {
+    window.location.href = mail.url;
+    showToast('Opening your email client...');
+  }
+});
 
 // ============================================================
 // RUN AUTOMATION — bridge to wizard
