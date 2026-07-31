@@ -1433,7 +1433,7 @@ var PROPOSAL_LAYOUTS = {
 function contentBox(def) {
   var pg = PAGES[def.page];
   var side = def.page === 'a4p' ? 0.55 : 0.45;
-  var top = def.page === 'a4p' ? 1.55 : 1.35;
+  var top = 1.55;   // slideChrome's title box ends at 1.48 — start clear of it
   var bottom = def.page === 'a4p' ? 0.75 : 0.6;
   return { x: side, y: top, w: pg.w - side * 2, h: pg.h - top - bottom };
 }
@@ -1448,6 +1448,48 @@ function gridRects(cols, rows, box, gutter) {
     }
   }
   return out;
+}
+
+// PowerPoint's own "contain" sizing needs the picture's natural dimensions, and
+// PptxGenJS cannot read those from a data URI in the browser — it stretches the
+// image to fill the box instead, which is what squashed the photo library. Every
+// picture is therefore placed at exact geometry computed from the decoded
+// bitmap, centred inside its box, so it can never stretch or spill out.
+function fitRect(bmp, box) {
+  var iw = (bmp && bmp.width) || 4, ih = (bmp && bmp.height) || 3;
+  var sc = Math.min(box.w / iw, box.h / ih);
+  var w = iw * sc, h = ih * sc;
+  return { x: box.x + (box.w - w) / 2, y: box.y + (box.h - h) / 2, w: w, h: h };
+}
+
+// Photo library grid: pick the column count that gives each photo the most room
+// for the number on the slide, rather than a fixed 6 across. Cells are capped so
+// a slide of two photos does not blow them up to full slide height, and the last
+// row is centred so 5 photos read as 3 + 2 instead of 4 + 1.
+var PHOTO_CAPTION = 0.18;
+function photoGrid(count, box, maxCols) {
+  var g = 0.14, capW = box.w / 3, best = null;
+  for (var cols = 1; cols <= Math.min(maxCols, count); cols++) {
+    var rows = Math.ceil(count / cols);
+    var cw = Math.min((box.w - g * (cols - 1)) / cols, capW);
+    var ch = Math.min((box.h - g * (rows - 1)) / rows, cw / 1.25 + PHOTO_CAPTION);
+    if (ch - PHOTO_CAPTION < 0.2) continue;               // no usable picture area
+    var area = cw * (ch - PHOTO_CAPTION);
+    if (!best || area > best.area) best = { cols: cols, rows: rows, w: cw, h: ch, area: area };
+  }
+  if (!best) return [];
+  var rects = [], left = count;
+  var blockH = best.rows * best.h + g * (best.rows - 1);
+  var y0 = box.y + Math.max(0, (box.h - blockH) / 2);
+  for (var r = 0; r < best.rows && left > 0; r++) {
+    var n = Math.min(best.cols, Math.ceil(left / (best.rows - r)));
+    var x0 = box.x + (box.w - (n * best.w + g * (n - 1))) / 2;
+    for (var c = 0; c < n; c++) {
+      rects.push({ x: x0 + c * (best.w + g), y: y0 + r * (best.h + g), w: best.w, h: best.h });
+    }
+    left -= n;
+  }
+  return rects;
 }
 
 function tileRects(def, noteBar) {
@@ -1557,22 +1599,33 @@ function slideChrome(pptx, slide, def, opts) {
   slide.addText(String(opts.page || ''), { x: pg.w - side - 1.5, y: pg.h - 0.4, w: 1.5, h: 0.26, fontSize: 7.5, color: MUTED, align: 'right', fontFace: FONT });
 }
 
-function addCardNative(slide, rect, item, imgData) {
-  var pad = 0.11;
+// Code, a two-line name and the quantity are budgeted first; the picture takes
+// whatever height is left. Sizing the picture as a fixed share of the card
+// instead let the name run into the quantity line on shorter tiles.
+// Heights are the text's own line heights — the boxes are drawn with margin 0
+// so nothing has to be left spare for PowerPoint's default insets.
+function cardText(rect) {
+  var wide = rect.w > 2.4;
+  var codeH = 0.15, nameH = wide ? 0.36 : 0.31, qtyH = 0.15;
+  return { codeH: codeH, nameH: nameH, qtyH: qtyH, total: codeH + nameH + qtyH + 0.03 };
+}
+
+function addCardNative(slide, rect, item, imgData, bmp) {
+  var pad = 0.1, tb = cardText(rect);
   slide.addShape('rect', { x: rect.x, y: rect.y, w: rect.w, h: rect.h, fill: { color: 'FFFFFF' }, line: { color: BORDER, width: 0.75 } });
-  var imgH = Math.max(0.5, rect.h * 0.52);
+  var imgH = Math.max(0.5, rect.h - pad * 2 - tb.total);
   if (imgData) {
-    slide.addImage({ data: imgData, x: rect.x + pad, y: rect.y + pad, w: rect.w - pad * 2, h: imgH,
-                     sizing: { type: 'contain', w: rect.w - pad * 2, h: imgH } });
+    var fit = fitRect(bmp, { x: rect.x + pad, y: rect.y + pad, w: rect.w - pad * 2, h: imgH });
+    slide.addImage({ data: imgData, x: fit.x, y: fit.y, w: fit.w, h: fit.h });
   } else {
     slide.addShape('rect', { x: rect.x + pad, y: rect.y + pad, w: rect.w - pad * 2, h: imgH, fill: { color: WASH }, line: { color: BORDER, width: 0.5, dashType: 'dash' } });
     slide.addText('Photo to add\n' + item.code, { x: rect.x + pad, y: rect.y + pad, w: rect.w - pad * 2, h: imgH, fontSize: 8, color: MUTED, align: 'center', valign: 'middle', fontFace: FONT });
   }
-  var ty = rect.y + pad + imgH + 0.1;
-  slide.addText(item.code, { x: rect.x + pad, y: ty, w: rect.w - pad * 2, h: 0.2, fontSize: 9, bold: true, color: 'B07A16', fontFace: FONT });
-  slide.addText(item.name, { x: rect.x + pad, y: ty + 0.2, w: rect.w - pad * 2, h: Math.max(0.24, rect.y + rect.h - (ty + 0.2) - 0.34),
+  var tx = rect.x + pad, tw = rect.w - pad * 2, ty = rect.y + pad + imgH + 0.05;
+  slide.addText(item.code, { x: tx, y: ty, w: tw, h: tb.codeH, margin: 0, fontSize: 9, bold: true, color: 'B07A16', fontFace: FONT });
+  slide.addText(item.name, { x: tx, y: ty + tb.codeH + 0.01, w: tw, h: tb.nameH, margin: 0,
                              fontSize: rect.w > 2.4 ? 11 : 9.5, bold: true, color: DARK, valign: 'top', fontFace: FONT });
-  slide.addText('Qty ' + (item.qty || 1), { x: rect.x + pad, y: rect.y + rect.h - 0.3, w: rect.w - pad * 2, h: 0.22, fontSize: 9, color: MUTED, fontFace: FONT });
+  slide.addText('Qty ' + (item.qty || 1), { x: tx, y: ty + tb.codeH + tb.nameH + 0.02, w: tw, h: tb.qtyH, margin: 0, fontSize: 9, color: MUTED, fontFace: FONT });
 }
 
 // ---- locked grid: paint every tile onto one canvas -> one picture -----------
@@ -1600,10 +1653,12 @@ function renderGridPng(def, rects, items, bitmaps, box) {
   items.forEach(function(item, i) {
     var r = rects[i];
     if (!r) return;
-    var x = (r.x - box.x) * DPI, y = (r.y - box.y) * DPI, w = r.w * DPI, hh = r.h * DPI, pad = 0.11 * DPI;
+    var x = (r.x - box.x) * DPI, y = (r.y - box.y) * DPI, w = r.w * DPI, hh = r.h * DPI, pad = 0.1 * DPI;
     ctx.fillStyle = '#ffffff'; ctx.fillRect(x, y, w, hh);
     ctx.strokeStyle = '#e2e2de'; ctx.lineWidth = 1.2; ctx.strokeRect(x + 0.6, y + 0.6, w - 1.2, hh - 1.2);
-    var imgH = Math.max(0.5 * DPI, hh * 0.52);
+    // same text budget as addCardNative, so locked and editable grids match
+    var tb = cardText(r);
+    var imgH = Math.max(0.5, r.h - 0.2 - tb.total) * DPI;
     var bm = bitmaps[i];
     if (bm) {
       var sc = Math.min((w - pad * 2) / bm.width, imgH / bm.height);
@@ -1616,13 +1671,13 @@ function renderGridPng(def, rects, items, bitmaps, box) {
       ctx.fillText(item.code, x + w / 2, y + pad + imgH / 2 + DPI * 0.13);
       ctx.textAlign = 'left';
     }
-    var ty = y + pad + imgH + DPI * 0.18;
+    var top = y + pad + imgH + DPI * 0.05;
     ctx.fillStyle = '#b07a16'; ctx.font = 'bold ' + Math.round(DPI * 0.09) + 'px Arial';
-    ctx.fillText(item.code, x + pad, ty);
-    ctx.fillStyle = '#1a1a1a'; ctx.font = 'bold ' + Math.round(DPI * (w > 2.4 * DPI ? 0.108 : 0.095)) + 'px Arial';
-    wrapText(ctx, item.name, x + pad, ty + DPI * 0.19, w - pad * 2, DPI * 0.15, 3);
+    ctx.fillText(item.code, x + pad, top + tb.codeH * DPI * 0.8);
+    ctx.fillStyle = '#1a1a1a'; ctx.font = 'bold ' + Math.round(DPI * (r.w > 2.4 ? 0.108 : 0.095)) + 'px Arial';
+    wrapText(ctx, item.name, x + pad, top + (tb.codeH + 0.01) * DPI + DPI * 0.12, w - pad * 2, DPI * 0.15, 2);
     ctx.fillStyle = '#8a8a86'; ctx.font = Math.round(DPI * 0.09) + 'px Arial';
-    ctx.fillText('Qty ' + (item.qty || 1), x + pad, y + hh - pad * 0.7);
+    ctx.fillText('Qty ' + (item.qty || 1), x + pad, top + (tb.codeH + tb.nameH + 0.02) * DPI + tb.qtyH * DPI * 0.8);
   });
   return c.toDataURL('image/jpeg', 0.92);
 }
@@ -1650,9 +1705,17 @@ function buildProposal() {
     status.textContent = 'Preparing photos...';
     return Promise.all(items.map(function(i) { return toJpeg(imageForCode(i.code)); }));
   }).then(function(imgs) {
-    return Promise.all([imgs, Promise.all(imgs.map(function(s) { return s ? loadBitmap(s) : null; }))]);
-  }).then(function(pair) {
-    var imgs = pair[0], bitmaps = pair[1];
+    // Decode everything that goes on a slide — the natural dimensions are what
+    // let fitRect place each picture without stretching it.
+    var logoSrc = buyingLogos.filter(Boolean);
+    return Promise.all([
+      imgs,
+      Promise.all(imgs.map(function(s) { return s ? loadBitmap(s) : null; })),
+      logoSrc,
+      Promise.all(logoSrc.map(function(s) { return loadBitmap(s); }))
+    ]);
+  }).then(function(parts) {
+    var imgs = parts[0], bitmaps = parts[1], logos = parts[2], logoBmps = parts[3];
     status.textContent = 'Building slides...';
     var pptx = new PptxGenJS();
     if (def.page === 'a4p') { pptx.defineLayout({ name: 'A4P', width: pg.w, height: pg.h }); pptx.layout = 'A4P'; }
@@ -1718,7 +1781,7 @@ function buildProposal() {
           var png = renderGridPng(def, rects, group, gBmps, box);
           s.addImage({ data: png, x: box.x, y: box.y, w: box.w, h: box.h });
         } else {
-          group.forEach(function(item, i) { if (rects[i]) addCardNative(s, rects[i], item, gImgs[i]); });
+          group.forEach(function(item, i) { if (rects[i]) addCardNative(s, rects[i], item, gImgs[i], gBmps[i]); });
         }
 
         if (def.oneUp && group[0]) {
@@ -1757,7 +1820,6 @@ function buildProposal() {
     });
 
     // ---------- buying group logos ----------
-    var logos = buyingLogos.filter(Boolean);
     if (logos.length) {
       var ls = pptx.addSlide();
       pageNo++;
@@ -1766,27 +1828,27 @@ function buildProposal() {
       var lw2 = Math.min(2.0, (lb.w - 0.3 * (logos.length - 1)) / logos.length);
       var startX = lb.x + (lb.w - (lw2 * logos.length + 0.3 * (logos.length - 1))) / 2;
       logos.forEach(function(d, i) {
-        ls.addImage({ data: d, x: startX + i * (lw2 + 0.3), y: lb.y + lb.h / 2 - 0.5, w: lw2, h: 1.0, sizing: { type: 'contain', w: lw2, h: 1.0 } });
+        var lf = fitRect(logoBmps[i], { x: startX + i * (lw2 + 0.3), y: lb.y + lb.h / 2 - 0.5, w: lw2, h: 1.0 });
+        ls.addImage({ data: d, x: lf.x, y: lf.y, w: lf.w, h: lf.h });
       });
     }
 
     // ---------- photo library ----------
     var have = [];
-    items.forEach(function(i, idx) { if (imgs[idx]) have.push({ code: i.code, data: imgs[idx] }); });
+    items.forEach(function(i, idx) { if (imgs[idx]) have.push({ code: i.code, data: imgs[idx], bmp: bitmaps[idx] }); });
     if (have.length) {
-      chunk(have, def.page === 'a4p' ? 24 : 24).forEach(function(group, gi, all) {
+      chunk(have, def.page === 'a4p' ? 24 : 12).forEach(function(group, gi, all) {
         var ps = pptx.addSlide();
         pageNo++;
         slideChrome(pptx, ps, def, { eyebrow: 'Photo library' + (all.length > 1 ? '  ·  ' + (gi + 1) + ' of ' + all.length : ''), title: 'Loose photos to drag in', headerRight: 'Equipment Proposal', page: pageNo });
         var pb = contentBox(def);
-        var cols = def.page === 'a4p' ? 4 : 6;
-        var rows2 = Math.ceil(group.length / cols);
-        var cellRects = gridRects(cols, Math.max(rows2, 1), pb, 0.12);
+        var cellRects = photoGrid(group.length, pb, def.page === 'a4p' ? 4 : 6);
         group.forEach(function(g, i) {
           var r = cellRects[i];
           if (!r) return;
-          ps.addImage({ data: g.data, x: r.x, y: r.y, w: r.w, h: r.h - 0.18, sizing: { type: 'contain', w: r.w, h: r.h - 0.18 } });
-          ps.addText(g.code, { x: r.x, y: r.y + r.h - 0.18, w: r.w, h: 0.16, fontSize: 7, color: MUTED, align: 'center', fontFace: FONT });
+          var pf = fitRect(g.bmp, { x: r.x, y: r.y, w: r.w, h: r.h - PHOTO_CAPTION });
+          ps.addImage({ data: g.data, x: pf.x, y: pf.y, w: pf.w, h: pf.h });
+          ps.addText(g.code, { x: r.x, y: r.y + r.h - PHOTO_CAPTION, w: r.w, h: 0.16, fontSize: 7.5, color: MUTED, align: 'center', fontFace: FONT });
         });
       });
     }
