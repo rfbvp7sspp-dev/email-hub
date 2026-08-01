@@ -1605,15 +1605,43 @@ function slideChrome(pptx, slide, def, opts) {
 // Heights are the text's own line heights — the boxes are drawn with margin 0
 // so nothing has to be left spare for PowerPoint's default insets.
 function cardText(rect) {
-  var wide = rect.w > 2.4;
-  var codeH = 0.15, nameH = wide ? 0.36 : 0.31, qtyH = 0.15;
-  return { codeH: codeH, nameH: nameH, qtyH: qtyH, total: codeH + nameH + qtyH + 0.03 };
+  var codeH = 0.15, qtyH = 0.15, gap = 0.03, minImg = 0.3;
+  var basePt = rect.w > 2.4 ? 11 : 9.5;
+  // Shrink the base type until two name lines, the code, the quantity and a
+  // usable picture all fit inside the tile. Hero + 3 stacks three side tiles
+  // into the content height, so they are only about an inch tall.
+  while (basePt > 6.5 && codeH + 2 * (basePt * 1.2 / 72) + qtyH + gap + minImg > rect.h - 0.2) basePt -= 0.5;
+  var nameH = 2 * basePt * 1.2 / 72;
+  return { basePt: basePt, codeH: codeH, nameH: nameH, qtyH: qtyH, total: codeH + nameH + qtyH + gap };
+}
+
+// The longest names in the guide need three lines at the card's base size, which
+// would run into the quantity. Shrink the type for those cards until the name
+// fits the two lines the layout reserves, so every card keeps the same geometry.
+var measureCtx = null;
+function nameLines(text, pt, widthIn) {
+  if (!measureCtx) measureCtx = document.createElement('canvas').getContext('2d');
+  measureCtx.font = 'bold ' + pt + 'pt Arial';
+  var words = String(text).split(/\s+/), line = '', lines = 1;
+  for (var i = 0; i < words.length; i++) {
+    var t = line ? line + ' ' + words[i] : words[i];
+    if (measureCtx.measureText(t).width / 96 > widthIn && line) { lines++; line = words[i]; }
+    else line = t;
+  }
+  return lines;
+}
+
+function fitNamePt(text, widthIn, basePt) {
+  for (var pt = basePt; pt >= 6.5; pt -= 0.5) {
+    if (nameLines(text, pt, widthIn) <= 2) return pt;
+  }
+  return 6.5;
 }
 
 function addCardNative(slide, rect, item, imgData, bmp) {
   var pad = 0.1, tb = cardText(rect);
   slide.addShape('rect', { x: rect.x, y: rect.y, w: rect.w, h: rect.h, fill: { color: 'FFFFFF' }, line: { color: BORDER, width: 0.75 } });
-  var imgH = Math.max(0.5, rect.h - pad * 2 - tb.total);
+  var imgH = Math.max(0.2, rect.h - pad * 2 - tb.total);
   if (imgData) {
     var fit = fitRect(bmp, { x: rect.x + pad, y: rect.y + pad, w: rect.w - pad * 2, h: imgH });
     slide.addImage({ data: imgData, x: fit.x, y: fit.y, w: fit.w, h: fit.h });
@@ -1624,7 +1652,7 @@ function addCardNative(slide, rect, item, imgData, bmp) {
   var tx = rect.x + pad, tw = rect.w - pad * 2, ty = rect.y + pad + imgH + 0.05;
   slide.addText(item.code, { x: tx, y: ty, w: tw, h: tb.codeH, margin: 0, fontSize: 9, bold: true, color: 'B07A16', fontFace: FONT });
   slide.addText(item.name, { x: tx, y: ty + tb.codeH + 0.01, w: tw, h: tb.nameH, margin: 0,
-                             fontSize: rect.w > 2.4 ? 11 : 9.5, bold: true, color: DARK, valign: 'top', fontFace: FONT });
+                             fontSize: fitNamePt(item.name, tw, tb.basePt), bold: true, color: DARK, valign: 'top', fontFace: FONT });
   slide.addText('Qty ' + (item.qty || 1), { x: tx, y: ty + tb.codeH + tb.nameH + 0.02, w: tw, h: tb.qtyH, margin: 0, fontSize: 9, color: MUTED, fontFace: FONT });
 }
 
@@ -1658,7 +1686,7 @@ function renderGridPng(def, rects, items, bitmaps, box) {
     ctx.strokeStyle = '#e2e2de'; ctx.lineWidth = 1.2; ctx.strokeRect(x + 0.6, y + 0.6, w - 1.2, hh - 1.2);
     // same text budget as addCardNative, so locked and editable grids match
     var tb = cardText(r);
-    var imgH = Math.max(0.5, r.h - 0.2 - tb.total) * DPI;
+    var imgH = Math.max(0.2, r.h - 0.2 - tb.total) * DPI;
     var bm = bitmaps[i];
     if (bm) {
       var sc = Math.min((w - pad * 2) / bm.width, imgH / bm.height);
@@ -1674,8 +1702,9 @@ function renderGridPng(def, rects, items, bitmaps, box) {
     var top = y + pad + imgH + DPI * 0.05;
     ctx.fillStyle = '#b07a16'; ctx.font = 'bold ' + Math.round(DPI * 0.09) + 'px Arial';
     ctx.fillText(item.code, x + pad, top + tb.codeH * DPI * 0.8);
-    ctx.fillStyle = '#1a1a1a'; ctx.font = 'bold ' + Math.round(DPI * (r.w > 2.4 ? 0.108 : 0.095)) + 'px Arial';
-    wrapText(ctx, item.name, x + pad, top + (tb.codeH + 0.01) * DPI + DPI * 0.12, w - pad * 2, DPI * 0.15, 2);
+    var namePt = fitNamePt(item.name, (r.w - 0.2), tb.basePt), nameLineIn = namePt * 1.2 / 72;
+    ctx.fillStyle = '#1a1a1a'; ctx.font = 'bold ' + Math.round(namePt / 72 * DPI) + 'px Arial';
+    wrapText(ctx, item.name, x + pad, top + (tb.codeH + 0.01) * DPI + nameLineIn * DPI * 0.8, w - pad * 2, nameLineIn * DPI, 2);
     ctx.fillStyle = '#8a8a86'; ctx.font = Math.round(DPI * 0.09) + 'px Arial';
     ctx.fillText('Qty ' + (item.qty || 1), x + pad, top + (tb.codeH + tb.nameH + 0.02) * DPI + tb.qtyH * DPI * 0.8);
   });
