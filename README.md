@@ -90,6 +90,26 @@ powershell -NoProfile -ExecutionPolicy Bypass -File ".Claude Agent\Agents\hospit
 
 ---
 
+## OneDrive organiser
+
+`tools/onedrive-organiser/` reorganises a synced OneDrive folder into the
+Jordan Knowledge System structure — eleven numbered domains plus an AI control
+plane that tells Copilot which file is the source of truth for what.
+
+It scans first and writes a reviewable `plan.csv`, moves nothing until you pass
+`-Execute`, never deletes or overwrites, and logs every move so a single command
+puts everything back.
+
+```powershell
+cd tools\onedrive-organiser
+.\Build-OneDrivePlan.ps1 -SourceRoot "C:\Users\<you>\OneDrive - Stryker"
+```
+
+See `tools/onedrive-organiser/README.md` for the full workflow and how to tune
+the routing rules.
+
+---
+
 ## What is planned
 
 - Google Sheets sync for tasks (replace localStorage)
