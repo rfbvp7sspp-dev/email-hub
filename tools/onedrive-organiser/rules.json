@@ -1,0 +1,242 @@
+{
+  "schemaVersion": 1,
+  "targetRoot": "Jordan Knowledge System",
+  "_comment": [
+    "Classification rules for the OneDrive reorg. Rules are evaluated TOP TO BOTTOM and",
+    "the FIRST match wins, so put specific rules above general ones.",
+    "",
+    "Matching fields (all optional, all must pass if present):",
+    "  pathMatches  - regex tested against the relative path, forward slashes, e.g. 'Agents/hospital-context/SKILL.md'",
+    "  nameMatches  - regex tested against the file name only, e.g. 'SKILL.md'",
+    "  extIn        - array of lowercase extensions including the dot, e.g. ['.pdf', '.docx']",
+    "",
+    "destination    - folder under targetRoot. Supports tokens:",
+    "  {hospital}   - resolved hospital id (kebab-case) or 'unresolved'",
+    "  {parent}     - the file's immediate parent folder name",
+    "  {year}       - year from the file's last-modified date",
+    "  {month}      - 2-digit month from the file's last-modified date",
+    "",
+    "confidence     - high | medium | low. Anything below the -MinConfidence you pass to",
+    "                 Invoke-OneDrivePlan.ps1 is written to the plan as Action=review, so",
+    "                 it will not move until you say so."
+  ],
+  "folders": [
+    "00_AI_Control_Plane",
+    "10_Territory_Intelligence",
+    "20_Product_Clinical_Knowledge",
+    "30_Hospital_Accounts",
+    "40_Workflows_Operations",
+    "50_Quotes_Proposals",
+    "60_Training_CheatSheets",
+    "70_Service_Tech_Ops",
+    "80_AI_Agents_Skills",
+    "90_Archive",
+    "99_Inbox_Processing"
+  ],
+  "excludePaths": [
+    "(?i)(^|/)\\.git/",
+    "(?i)(^|/)node_modules/",
+    "(?i)(^|/)\\$recycle\\.bin/",
+    "(?i)(^|/)\\.venv/",
+    "(?i)(^|/)__pycache__/",
+    "(?i)(^|/)Jordan Knowledge System/"
+  ],
+  "excludeNames": [
+    "(?i)^~\\$",
+    "(?i)^\\._",
+    "(?i)^desktop\\.ini$",
+    "(?i)^thumbs\\.db$",
+    "(?i)^\\.ds_store$",
+    "(?i)\\.tmp$",
+    "(?i)\\.lnk$",
+    "(?i)\\.laccdb$"
+  ],
+  "runLocallyExtensions": [
+    ".ps1",
+    ".psm1",
+    ".psd1",
+    ".py",
+    ".bat",
+    ".cmd",
+    ".sh",
+    ".vbs",
+    ".exe",
+    ".msi"
+  ],
+  "archiveNamePatterns": [
+    "(?i)(^|[ _\\-\\(])(old|older|obsolete|superseded|deprecated|retired|archive[d]?)([ _\\-\\)\\.]|$)",
+    "(?i)[ _\\-]copy( \\(\\d+\\))?\\.",
+    "(?i)\\(\\d+\\)\\.[a-z0-9]+$",
+    "(?i)(final[ _\\-]?){2,}",
+    "(?i)[ _\\-]bak\\.",
+    "(?i)\\.bak$",
+    "(?i)[ _\\-](draft|wip)[ _\\-]?v?\\d*\\.(docx?|pptx?|xlsx?)$"
+  ],
+  "hospitalKeywords": [
+    "hospital",
+    "private",
+    "health",
+    "healthcare",
+    "medical centre",
+    "medical center",
+    "day surgery",
+    "clinic",
+    "base hospital",
+    "public hospital"
+  ],
+  "rules": [
+    {
+      "id": "exclude-tooling",
+      "why": "This reorg toolkit itself must never move itself",
+      "pathMatches": "(?i)(^|/)tools/onedrive-organiser/",
+      "destination": "__SKIP__",
+      "confidence": "high"
+    },
+    {
+      "id": "control-plane-core",
+      "why": "Canonical instruction, architecture and decision files that define the system",
+      "nameMatches": "(?i)^(claude|agents|architecture|copilot-instructions|what_copilot_sees|system_index|decision[_\\-]?log|log)\\.(md|html|json)$",
+      "destination": "00_AI_Control_Plane/_source_originals",
+      "confidence": "high"
+    },
+    {
+      "id": "control-plane-context",
+      "why": "context/*.md files: me, work, goals, priorities, contacts",
+      "pathMatches": "(?i)(^|/)context/",
+      "extIn": [
+        ".md",
+        ".json",
+        ".txt"
+      ],
+      "destination": "00_AI_Control_Plane/_source_originals/context",
+      "confidence": "high"
+    },
+    {
+      "id": "hospital-alias-index",
+      "why": "The hospital alias index is the accounts source of truth, not a control-plane file",
+      "pathMatches": "(?i)(^|/)(hospitals?|accounts?|hospital[_\\-]context)/_index\\.json$",
+      "destination": "30_Hospital_Accounts",
+      "confidence": "high"
+    },
+    {
+      "id": "control-plane-indexes",
+      "why": "Top-level index files that act as source-of-truth maps",
+      "nameMatches": "(?i)^(_index|attachments-index|.*[_\\-]index)\\.(json|xlsx|csv)$",
+      "destination": "00_AI_Control_Plane/_indexes",
+      "confidence": "medium"
+    },
+    {
+      "id": "skills-definition-files",
+      "why": "SKILL.md and skill metadata are agent definitions",
+      "nameMatches": "(?i)^(skill|skills|prompt|prompts|agent|agents)\\.(md|json|ya?ml)$",
+      "destination": "80_AI_Agents_Skills/{parent}",
+      "confidence": "high"
+    },
+    {
+      "id": "skills-by-path",
+      "why": "Anything living under a Claude Agent / Agents / .claude/skills tree is a skill asset",
+      "pathMatches": "(?i)(^|/)(\\.?claude[ _\\-]?agent(\\(\\d+\\))?|\\.claude/skills|agents|skills)/",
+      "destination": "80_AI_Agents_Skills/{parent}",
+      "confidence": "medium"
+    },
+    {
+      "id": "hospital-json-facts",
+      "why": "Per-hospital JSON is the account memory model",
+      "pathMatches": "(?i)(^|/)(hospitals?|accounts?|hospital[_\\-]context)/",
+      "extIn": [
+        ".json"
+      ],
+      "destination": "30_Hospital_Accounts/{hospital}",
+      "confidence": "high"
+    },
+    {
+      "id": "hospital-by-name",
+      "why": "Files whose name or path contains a known hospital identifier",
+      "pathMatches": "(?i)(hospital|private|health service|day surgery|medical centre)",
+      "destination": "30_Hospital_Accounts/{hospital}",
+      "confidence": "medium"
+    },
+    {
+      "id": "service-tech-ops",
+      "why": "Work orders, loan units, scope exchange, ProCare, repairs",
+      "pathMatches": "(?i)(work[ _\\-]?order|\\bwo[ _\\-]?\\d|loan[ _\\-]?unit|scope[ _\\-]?exchange|procare|repair|rma\\b|tech[ _\\-]?services|service[ _\\-]?job|po[ _\\-]?chase)",
+      "destination": "70_Service_Tech_Ops",
+      "confidence": "high"
+    },
+    {
+      "id": "quotes-proposals",
+      "why": "CPQ, quotes, proposals, pricing and Salesforce opportunity material",
+      "pathMatches": "(?i)(\\bquote|\\bcpq\\b|proposal|pricing|price[ _\\-]?list|salesforce|opportunit|tender|\\brfp\\b|\\brft\\b)",
+      "destination": "50_Quotes_Proposals",
+      "confidence": "high"
+    },
+    {
+      "id": "training-cheatsheets",
+      "why": "Cheat sheets, in-services and theatre training material",
+      "pathMatches": "(?i)(cheat[ _\\-]?sheet|in[ _\\-]?service|inservice|training|laminat|quick[ _\\-]?ref|how[ _\\-]?to|user[ _\\-]?guide|workflow[ _\\-]?card)",
+      "destination": "60_Training_CheatSheets",
+      "confidence": "high"
+    },
+    {
+      "id": "territory-intelligence",
+      "why": "Business plans, pipeline, forecasts, QBRs, territory strategy",
+      "pathMatches": "(?i)(business[ _\\-]?plan|territory|pipeline|forecast|\\bqbr\\b|quarterly[ _\\-]?business|account[ _\\-]?rank|target[s]?[ _\\-]?list|budget|\\bytd\\b)",
+      "destination": "10_Territory_Intelligence",
+      "confidence": "high"
+    },
+    {
+      "id": "workflows-operations",
+      "why": "Repeatable operational workflows and the systems that run them",
+      "pathMatches": "(?i)(workflow|power[ _\\-]?automate|concur|expense|debrief|meeting[ _\\-]?prep|\\bsop\\b|standard[ _\\-]?operating)",
+      "destination": "40_Workflows_Operations",
+      "confidence": "medium"
+    },
+    {
+      "id": "clinical-evidence",
+      "why": "Clinical evidence and claims need their own governed home",
+      "pathMatches": "(?i)(clinical|evidence|peer[ _\\-]?review|journal|stud(y|ies)|white[ _\\-]?paper|claim[s]?[ _\\-]?matrix|off[ _\\-]?label|guideline)",
+      "destination": "20_Product_Clinical_Knowledge/_clinical_evidence",
+      "confidence": "medium"
+    },
+    {
+      "id": "product-knowledge",
+      "why": "Product families, IFUs, brochures, spec sheets",
+      "pathMatches": "(?i)(\\b1788\\b|\\b1688\\b|isuite|i[ _\\-]?suite|\\bspy[ _\\-]?(phi|pinpoint)?\\b|thermaclear|datamediat(or|er)|corip|connected[ _\\-]?or|stryker[ _\\-]?hub|pinpoint|\\bifu\\b|instructions[ _\\-]for[ _\\-]use|brochure|spec[ _\\-]?sheet|data[ _\\-]?sheet|product)",
+      "destination": "20_Product_Clinical_Knowledge",
+      "confidence": "medium"
+    },
+    {
+      "id": "inbox-raw-capture",
+      "why": "Raw exports and unprocessed captures land in the staging zone",
+      "pathMatches": "(?i)(^|/)(downloads?|inbox|unsorted|to[ _\\-]?sort|screenshots?|voice[ _\\-]?notes?|recordings?|exports?)/",
+      "destination": "99_Inbox_Processing/{parent}",
+      "confidence": "high"
+    },
+    {
+      "id": "inbox-email-exports",
+      "why": "Email exports are queue material, not knowledge",
+      "extIn": [
+        ".msg",
+        ".eml"
+      ],
+      "destination": "99_Inbox_Processing/email-exports",
+      "confidence": "high"
+    },
+    {
+      "id": "inbox-loose-media",
+      "why": "Loose photos and video need a human to say what they are",
+      "extIn": [
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".heic",
+        ".mp4",
+        ".mov",
+        ".m4a",
+        ".wav"
+      ],
+      "destination": "99_Inbox_Processing/media",
+      "confidence": "low"
+    }
+  ]
+}

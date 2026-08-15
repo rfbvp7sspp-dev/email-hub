@@ -1,0 +1,4 @@
+# Scan output contains real file paths, hospital names and account material.
+# It stays on your machine.
+out/
+hospitals.json
